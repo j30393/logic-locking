@@ -1,0 +1,34 @@
+inputs=178 keys=79 outputs=123 gates=2406
+iteration: 1; vars: 12438; clauses: 3226; decisions: 3276
+iteration: 2; vars: 16348; clauses: 3196; decisions: 20352
+iteration: 3; vars: 20258; clauses: 8174; decisions: 21122
+iteration: 4; vars: 24168; clauses: 13094; decisions: 23716
+iteration: 5; vars: 28078; clauses: 18382; decisions: 24122
+iteration: 6; vars: 31988; clauses: 23670; decisions: 24463
+iteration: 7; vars: 35898; clauses: 2989; decisions: 25658
+iteration: 8; vars: 39808; clauses: 8061; decisions: 26006
+iteration: 9; vars: 43718; clauses: 13121; decisions: 26398
+iteration: 10; vars: 47628; clauses: 18175; decisions: 30017
+iteration: 11; vars: 51538; clauses: 23491; decisions: 30363
+iteration: 12; vars: 55448; clauses: 2898; decisions: 31656
+iteration: 13; vars: 59358; clauses: 6950; decisions: 32020
+iteration: 14; vars: 63268; clauses: 11028; decisions: 32361
+iteration: 15; vars: 67178; clauses: 15118; decisions: 32705
+iteration: 16; vars: 71088; clauses: 19212; decisions: 33377
+iteration: 17; vars: 74998; clauses: 2776; decisions: 34434
+iteration: 18; vars: 78908; clauses: 7090; decisions: 34841
+iteration: 19; vars: 82818; clauses: 11812; decisions: 35168
+iteration: 20; vars: 86728; clauses: 16542; decisions: 35645
+iteration: 21; vars: 90638; clauses: 21242; decisions: 35976
+iteration: 22; vars: 94548; clauses: 2663; decisions: 36719
+iteration: 23; vars: 98458; clauses: 7431; decisions: 37173
+iteration: 24; vars: 102368; clauses: 12123; decisions: 37511
+iteration: 25; vars: 106278; clauses: 16815; decisions: 37842
+iteration: 26; vars: 110188; clauses: 21471; decisions: 38174
+iteration: 27; vars: 114098; clauses: 2620; decisions: 38531
+iteration: 28; vars: 118008; clauses: 7650; decisions: 38926
+iteration: 29; vars: 121918; clauses: 12488; decisions: 39257
+iteration: 30; vars: 125828; clauses: 17370; decisions: 39376
+finished solver loop. fail_count = 0
+key=1110000000110110010101001011110000101111101101011000011100011000101110110000000
+iteration=30; backbones_count=0; cube_count=333560; cpu_time=0.468283; maxrss=17.3633
