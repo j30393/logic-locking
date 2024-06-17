@@ -1,0 +1,154 @@
+-------------------------------------------------------
+name: G7gat
+Gate type: BUF
+Type: PI
+ID: 0
+And Count: 0
+Or Count: 0
+CCO -> 1
+CC1 -> 1
+CO -> 0
+FI node : 
+FO node : G19gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G6gat
+Gate type: BUF
+Type: PI
+ID: 1
+And Count: 0
+Or Count: 0
+CCO -> 1
+CC1 -> 1
+CO -> 0
+FI node : 
+FO node : G11gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G3gat
+Gate type: BUF
+Type: PI
+ID: 2
+And Count: 0
+Or Count: 0
+CCO -> 1
+CC1 -> 1
+CO -> 0
+FI node : 
+FO node : G10gat G11gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G11gat
+Gate type: NAND
+Type: Intl
+ID: 3
+And Count: 0
+Or Count: 0
+CCO -> 3
+CC1 -> 2
+CO -> 0
+FI node : G3gat G6gat 
+FO node : G16gat G19gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G19gat
+Gate type: NAND
+Type: Intl
+ID: 4
+And Count: 0
+Or Count: 0
+CCO -> 4
+CC1 -> 2
+CO -> 0
+FI node : G11gat G7gat 
+FO node : G23gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G2gat
+Gate type: BUF
+Type: PI
+ID: 5
+And Count: 0
+Or Count: 0
+CCO -> 1
+CC1 -> 1
+CO -> 0
+FI node : 
+FO node : G16gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G16gat
+Gate type: NAND
+Type: Intl
+ID: 6
+And Count: 0
+Or Count: 0
+CCO -> 4
+CC1 -> 2
+CO -> 0
+FI node : G2gat G11gat 
+FO node : G22gat G23gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G23gat
+Gate type: NAND
+Type: PO
+ID: 7
+And Count: 0
+Or Count: 0
+CCO -> 5
+CC1 -> 5
+CO -> 0
+FI node : G16gat G19gat 
+FO node : 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G1gat
+Gate type: BUF
+Type: PI
+ID: 8
+And Count: 0
+Or Count: 0
+CCO -> 1
+CC1 -> 1
+CO -> 0
+FI node : 
+FO node : G10gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G10gat
+Gate type: NAND
+Type: Intl
+ID: 9
+And Count: 0
+Or Count: 0
+CCO -> 3
+CC1 -> 2
+CO -> 0
+FI node : G1gat G3gat 
+FO node : G22gat 
+-------------------------------------------------------
+
+-------------------------------------------------------
+name: G22gat
+Gate type: NAND
+Type: PO
+ID: 10
+And Count: 0
+Or Count: 0
+CCO -> 5
+CC1 -> 4
+CO -> 0
+FI node : G10gat G16gat 
+FO node : 
+-------------------------------------------------------
+
