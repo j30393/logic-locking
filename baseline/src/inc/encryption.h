@@ -32,7 +32,6 @@ class encryption{
 		~encryption();
 			
 		//operator
-		const	int			getArea()							{ return area; 					}
 		const 	std::string	getKey()							{ return key;					}
 		const	int			getKeylen()							{ return KEY_Ary.size();		}
 				void		insertNODE(NODE *_node)				{ NODE_Ary.push_back(_node);	}
@@ -46,6 +45,7 @@ class encryption{
 				void		tree_encryption();					//encryption
 				void		outputfile();
 				void		setOutputname(std::string _name);
+				void 		graph_traverse();
 	private:
 		std::vector<NODE*>				NODE_Ary;
 		std::vector<NODE*>				PI_Ary;
@@ -60,11 +60,9 @@ class encryption{
 		std::string	 			 		filename;	
 		std::string	 			 		outputname;
 		bool 					 		twolevelfile;
-		int 					 		area;
 		int 							keyCount;	
 		std::vector<int>				color;
 		std::vector<int>				hue;
-		void							caculateArea();
 		void							DFS(int,int*);
 		void 							RecursiveFtype(NODE* _node, int& max, FType _ft);
 		void  							RecursiveLogicCone(CONE*, NODE*, FType);

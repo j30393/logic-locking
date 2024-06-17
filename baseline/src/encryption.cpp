@@ -15,7 +15,6 @@ encryption::encryption(){
 	OR_Ary.clear();
 	outputname ="";
 	keyCount = 0;
-	area = 0;
 	threshold = 0.4;
 	constraint = 0;
 }
@@ -30,7 +29,13 @@ encryption::~encryption(){
 	KEY_Ary.clear();
 	name2node.clear();
 	key="";
-	area = 0;
+}
+
+// 109062233 add graph traverse 
+void encryption::graph_traverse(){
+	for(auto p : NODE_Ary){
+		std::cout << p <<std::endl;
+	}
 }
 
 void encryption::setOutputname(std::string _name){
@@ -57,7 +62,7 @@ void encryption::readfile(std::string _filename){
 		//	std::cout<<"empty\n";
 			continue;
 		}
-		if(checkerflag == "IN"){
+		if(checkerflag == "IN"){ // input 
 			std::string name = "";
 			name.assign(buffer, 6, buffer.size()-7);
 				
@@ -258,11 +263,6 @@ void encryption::readfile(std::string _filename){
 	}
 	input.close();
 
-	//caculate area
-	this->caculateArea();
-	
-	surplus_area = (int)std::floor((double)area*0.1);
-	constraint = (int)std::floor((double)surplus_area/(double)4.0);
 
 	//std::cout<<constraint<<std::endl;
 }
@@ -293,13 +293,6 @@ std::ostream& operator<<(std::ostream& os, NODE* p){
 
 bool compareNode(NODE *_node1, NODE *_node2 ){
 	return _node1->getEnd() > _node2->getEnd();
-}
-
-void encryption::caculateArea(){
-	area = 0; //reset
-	for(auto p : NODE_Ary){
-		area += p->getCost();  
-	}
 }
 
 void encryption::controllability(){
@@ -724,7 +717,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			key += "0";
 		}
 		else{//XNOR
-			area +=1;
 			name.clear();
 			name = "ENCXNOR";
 			name += std::to_string(keyCount++);
@@ -781,7 +773,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			key += "0";
 		}
 		else{//XNOR
-			area +=1;
 			name.clear();
 			name = "ENCXNOR";
 			name += std::to_string(keyCount++);
@@ -815,7 +806,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 
 void encryption::AND_encryption(CONE* _cone){
 	//f' = f∨(∧[n~1] (xi ^ki))
-	area +=	4*_cone->getInput().size();
 	
 	std::string tems = "";
 	std::string name = "";
@@ -833,10 +823,6 @@ void encryption::AND_encryption(CONE* _cone){
 	//this is construct keyi^xi
 	for(auto p: _cone->getInput()){
 		if(p->isEncryption()){
-			if(p->getEncType() == FType::XOR)
-				area -= 3;
-			else
-				area -= 2; 
 			andkey->insertFI(p->getEncNode());
 			p->getEncNode()->insertFO(andkey);
 		}
@@ -871,7 +857,6 @@ void encryption::AND_encryption(CONE* _cone){
 
 void encryption::OR_encryption(CONE* _cone){
 	//f' = f∧(v[n~1] (xi ^ki))
-	area +=	4*_cone->getInput().size();
 	
 	std::string tems = "";
 	std::string name = "ENCAND";
@@ -888,11 +873,7 @@ void encryption::OR_encryption(CONE* _cone){
 //	std::cout<<"size:"<<_cone->getInput().size()<<std::endl;
 	
 	for(auto p: _cone->getInput()){
-		if(p->isEncryption()){
-			if(p->getEncType() == FType::XOR)
-				area -= 3;
-			else
-				area -= 2; 
+		if(p->isEncryption()){ 
 			orkey->insertFI(p->getEncNode());
 			p->getEncNode()->insertFO(orkey);
 		}
@@ -1029,126 +1010,6 @@ void encryption::ezAndenc(NODE* _node){
 	ktem->insertFO(encNode);
 	_node->setEncNode(encNode);
 	_node->setEncryption(true);
-}
-
-void encryption::tree_encryption(){
-	//unuse = 0, used = 1;
-	threshold = 0.0;
-	std::vector<int>is_use;
-	is_use.resize(LogicCone.size());
-	std::fill(is_use.begin(), is_use.end(), 0); //reset
-
-
-	for(size_t i=0; i<LogicCone.size();i++){
-		if(is_use[i]==0){
-			for(size_t j=0; j<LogicCone.size();j++){
-				if(i!=j && is_use[i]==0 && is_use[j]==0){
-					auto pos = LogicCone[i]->getInput().find(LogicCone[j]->getOutput());
-					if(pos != LogicCone[i]->getInput().end()){
-						is_use[j]=1;
-					}
-					else{
-						auto pos2 = LogicCone[j]->getInput().find(LogicCone[i]->getOutput());
-						if(pos2 != LogicCone[j]->getInput().end()){
-							is_use[i]=1;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	//intersection count
-
-	int orig = surplus_area;
-	
-	std::vector<CONE*>already_encry;
-	already_encry.clear();
-	while(surplus_area>8){
-		int last_area = area;
-		int count=0;
-		bool isf = false;
-		for(auto p :LogicCone){
-			if(is_use[count]==0){
-	//			std::cout<<"need encryption size : "<< p->getInput().size()*3<<std::endl;
-				
-				int expected = p->IntersectionCone(already_encry).size();
-
-				if((p->getInput().size()-expected)*4 > surplus_area){
-					is_use[count] = 1;
-				}
-				else {
-					isf = true;
-					is_use[count] = 1;
-					already_encry.push_back(p);
-					if(p->getFtype() == FType::AND){
-						AND_encryption(p);
-					}
-					else{
-						OR_encryption(p);
-					}
-					//std::cout<<"after encryption: "<<area<<std::endl;
-					//update intersectionC
-
-					break;
-				}
-			}
-		
-			count++;
-		}
-		
-		//update
-		surplus_area -= (area - last_area);
-
-		threshold *= (double)surplus_area/(double)orig ;
-		if(threshold < 0.1)
-			threshold = 0;
-		//std::cout<<"threshold: "<<threshold<<std::endl;
-		//std::cout <<"remading_area :" <<surplus_area << std::endl;
-		if(isf == false)
-			break;
-	}
-			
-//		std::cout <<"after logic enc ="<<area<<"remading_area :" <<surplus_area << std::endl;
-	
-		std::sort(NODE_Ary.begin(), NODE_Ary.end(),compareCO);
-	//	std::sort(AND_Ary.begin(), AND_Ary.end(),compareCO);
-	//	std::sort(OR_Ary.begin(), OR_Ary.end(),compareCO);
-		int c=0;
-		for(auto p:NODE_Ary){
-			p->setId(c++);
-		}
-	
-		for(auto p:NODE_Ary){
-			if(p->getType() == Type::Intl && p->isEncryption()==false){
-				double  randnum = (double)rand()/RAND_MAX ;
-			//	std::cout<<randnum<<std::endl;
-				if(surplus_area >=3){
-					if(randnum >0.5){
-						ezXorenc(p);	
-					}
-					else {
-						ezXorenc(p);
-					}
-					area+=3;
-					surplus_area -=3;
-				}
-				else if(surplus_area <=0){
-					break;
-				}
-				else{
-					if(randnum >0.5){
-						ezAndenc(p);	
-					}
-					else {
-						ezOrenc(p);
-					}
-					
-					area+=1;
-					surplus_area -=1;
-				}
-			}
-		}
 }
 
 void encryption::outputfile(){

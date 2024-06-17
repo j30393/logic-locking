@@ -61,8 +61,8 @@ int main(int argc, char* argv[]){
 			enc->setOutputname(argv[2]);
 		enc->readfile(argv[1]);
 		enc->topological_sort();
-		enc->Flogic_cone();
-		enc->tree_encryption();
-		enc->outputfile();
+		enc->graph_traverse();
+		//enc->Flogic_cone();
+		//enc->outputfile();
 	return 0;
 }
