@@ -18,14 +18,12 @@
 #include <time.h>
 #include <stack>
 #include <queue>
+#include <cassert>
 //#define bug
 
 
 
 class encryption;
-
-bool compareNode(NODE *_node1, NODE *_node2 );
-
 
 class encryption{
 	public:
@@ -42,10 +40,10 @@ class encryption{
 				void		readfile(std::string);				//read .bench file
 				void		witefile();							//write .bench file with encryption
 				void		topological_sort();					// pre-process for logic cone
-				void		Flogic_cone();						//get logic cone
 				void		outputfile();
 				void		setOutputname(std::string _name);
 				void 		graph_traverse();
+				void		setDebugMode(bool _debug)			{ is_debug = _debug;			}
 	private:
 		std::vector<NODE*>				NODE_Ary;
 		std::vector<NODE*>				PI_Ary;
@@ -60,17 +58,14 @@ class encryption{
 		std::string	 			 		filename;	
 		std::string	 			 		outputname;
 		bool 					 		twolevelfile;
+		bool 					 		is_debug;
 		int 							keyCount;	
 		std::vector<int>				visited;
 		std::vector<int>				in_degree;
 		std::vector<int>				hue;
-		void							DFS(int,int*);
-		void 							RecursiveFtype(NODE* _node, int& max, FType _ft);
-		void  							RecursiveLogicCone(CONE*, NODE*, FType);
 		void							AND_encryption(CONE*);
 		void							OR_encryption(CONE*);
 		void							constructEncryKey(FType, NODE*, NODE*,double ); 
-		void							observability();
 		double							threshold;
 		int 							surplus_area;
 		int 	 						constraint;

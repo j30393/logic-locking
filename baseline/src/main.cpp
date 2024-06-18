@@ -60,9 +60,9 @@ int main(int argc, char* argv[]){
 		if(argc == 3)
 			enc->setOutputname(argv[2]);
 		enc->readfile(argv[1]);
+		enc->setDebugMode(false);
 		enc->topological_sort();
 		//enc->graph_traverse();
-		//enc->Flogic_cone();
 		//enc->outputfile();
 	return 0;
 }

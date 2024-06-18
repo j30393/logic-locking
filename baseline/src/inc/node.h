@@ -117,6 +117,10 @@ class NODE{
 				void		setCO (int _num)			{ CO  = _num; 						}
 		const	int 		getCO ()					{ return CO; 						} 
 				bool 		path3length(NODE*, int);
+		// 109062233 add for stuck at fault 
+		const	bool		getCurrentOutput()			{ return current_output;			}
+				void		setCurrentOutput(bool _b)	{ current_output = _b;				}
+				void		setStuckFault(bool _b)		{ stuck_fault = _b;					}
 	private:
 		Type				t;
 		FType				ft;
@@ -130,8 +134,11 @@ class NODE{
 		bool				enc;
 		FType				enc_type;
 		NODE*				enc_node;
+		bool				current_output;
+		bool 				stuck_fault;
 		int 	  			CO;				//observability 	
 		int					depth;
+
 };
 
 bool compareCO(NODE* _node1, NODE *_node2);

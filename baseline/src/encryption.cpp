@@ -291,9 +291,6 @@ std::ostream& operator<<(std::ostream& os, NODE* p){
 	return os;
 }
 
-bool compareNode(NODE *_node1, NODE *_node2 ){
-	return _node1->getDepth() > _node2->getDepth();
-}
 
 /**
  * Topological sort for the graph using kahn's algorithm
@@ -350,164 +347,29 @@ void encryption::topological_sort(){
     }
  
     // Check for cycle
-    if (result.size() != NODE_Ary.size()) {
-        std::cout << "Graph contains cycle!" << std::endl;
-    }
+    assert(result.size() == NODE_Ary.size());
+	NODE_Ary.clear();
+	for(auto it : result){
+		NODE_Ary.push_back(it);
+	}
+	result.clear();
+	result.shrink_to_fit(); // release memory 
  
-	for(auto it: result){
+	/*for(auto it: NODE_Ary){
 		std::cout << it << std::endl;
-	}
-
-
-	//std::sort(NODE_Ary.begin(), NODE_Ary.end(), compareNode); //sory by finifsh time
-
-
-	int count = 0;
-	for(auto p :NODE_Ary){
-		//reset id
-		p->setId(count++); //set ID
-		if(p->getFtype() == FType::AND)
-			AND_Ary.push_back(p);
-		else if(p->getFtype() == FType::OR)
-			OR_Ary.push_back(p);
-		//count and num
-		if(p->getFI().size()==0){
-			p->setAndC(0);
-			p->setOrC(0);
-		}
-		else{
-			if(p->getFtype() == FType::AND){
-				int max_and = 0;
-				RecursiveFtype(NODE_Ary[p->getId()], max_and, FType::AND);
-				//set ANDC
-				p->setAndC(max_and+1);
-			}
-			else if(p->getFtype() == FType::OR){
-				int max_or = 0;
-				RecursiveFtype(NODE_Ary[p->getId()], max_or, FType::OR);
-				//set ANDC
-				p->setOrC(max_or+1);
-			}
-			else{
-				p->setAndC(0);
-				p->setOrC(0);
-			}
-			
-		}
-		//or count
-		//std::cout<<p->getId()<<"->"<<p->getName()<<"("<<p->getStart()<<","<<p->getEnd()<<")"<<"\n";
-	}
-	
-}
-
-void encryption::RecursiveFtype(NODE* _node, int& max,FType _ft){
-	for(auto p : _node->getFI()){
-		if(p->getFtype() == _ft){
-			switch(_ft)
-			{
-				case FType::OR :
-					if(p->getOrC() > max)
-						max = p->getOrC();
-					break;
-				case FType::AND :
-					if(p->getAndC() > max)
-						max = p->getAndC();
-					break;
-				default :
-					break;
-			}
-		}
-		else if(p->getFtype() == FType::BUF){
-			this->RecursiveFtype(p, max, _ft);
-		}
-	}
-	return;
-
-}
-
-void encryption::RecursiveLogicCone(CONE* _cone, NODE* _node, FType _ft){	
-	if(_ft == FType::AND){ //AND
-		for(auto p :_node->getFI()){
-			if(p->getAndC() == 0){
-				_cone->insertInput(NODE_Ary[p->getId()]);
-				visited[p->getId()] = 1;
-			}
-			else if(p->getAndC() >= 1){
-			//	std::cout<<"recursive : "<<p->getName()<<std::endl;
-				//std::cout<<( _cone->getInput().size() + p->getFI().size() )<<std::endl;
-				if( ( _cone->getInput().size() + p->getFI().size() ) >= constraint){
-					_cone->insertInput(NODE_Ary[p->getId()]);
-					visited[p->getId()] = 1;
-					return ;	
-				}
-				else{
-					visited[p->getId()] = 1;
-					RecursiveLogicCone(_cone, NODE_Ary[p->getId()], _ft);
-				}
-			}
-		}
-		return;
-	}
-	else{ //OR
-		for(auto p :_node->getFI()){
-			if(p->getOrC() == 0){
-				_cone->insertInput(NODE_Ary[p->getId()]);
-				hue[p->getId()] = 1;
-			}
-			else if(p->getOrC() >= 1){
-				if( ( _cone->getInput().size() + p->getFI().size() ) >= constraint){
-					_cone->insertInput(NODE_Ary[p->getId()]);
-					visited[p->getId()] = 1;
-					return ;	
-				}
-				else{
-					hue[p->getId()] = 1;
-					RecursiveLogicCone(_cone, NODE_Ary[p->getId()], _ft);
-				}
-			}
-		}
-		return;
-	}
-}
-
-
-void encryption::Flogic_cone(){
-	
-	//reverse topological sort
-	std::reverse(NODE_Ary.begin(), NODE_Ary.end());
-	// make observility
-
-	/*for(auto p :NODE_Ary){
-		std::cout<<p<<std::endl;
 	}*/
-	hue.resize(NODE_Ary.size());
-	std::fill(visited.begin(), visited.end(), 0);
-	std::fill(hue.begin(), hue.end(), 0);
-	
-	int counc =0;
-	for(auto p : NODE_Ary){
-		p->setId(counc++); //set ID
-	}
-	
-	for(auto p: NODE_Ary){
-		if( visited[p->getId()] == 0&& p->getFtype()== FType::AND){
-			visited[p->getId()] = 1;
-			CONE* c =new CONE(p->getFtype(), NODE_Ary[p->getId()]);
-			RecursiveLogicCone(c, NODE_Ary[p->getId()], p->getFtype());
-			LogicCone.push_back(c);
+	if(this->is_debug){
+		for(auto it: NODE_Ary){
+			std::cout << "name : " << it->getName() << " depth : " << it->getDepth() << std::endl;
+			for(auto child: it->getFI()){
+				std::cout << "child : " << child->getName() << " depth : " << child->getDepth() << std::endl;
+			}
 		}
-		else if( hue[p->getId()] == 0&& p->getFtype()== FType::OR){
-			hue[p->getId()] = 1;
-			CONE* c =new CONE(p->getFtype(), NODE_Ary[p->getId()]);
-			RecursiveLogicCone(c, NODE_Ary[p->getId()], p->getFtype());
-			LogicCone.push_back(c);
-		}
+		std::cout << "\n\n\n\n";
 	}
-
-	std::sort(LogicCone.begin(), LogicCone.end(), compareCone);
-
-
 }
+
+
 void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, double _rand){
 	if(_ft == FType::AND){
 		std::string name = "";
