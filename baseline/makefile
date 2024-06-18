@@ -11,7 +11,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
 %.o: %.cpp ${INCLUDES}
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(LDFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf *.o $(EXECUTABLE)
