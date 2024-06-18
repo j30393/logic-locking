@@ -4,7 +4,6 @@
 #define _ENCRYPTION_H
 
 #include"./node.h"
-#include"./cone.h"
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -39,7 +38,6 @@ class encryption{
 				void		insertPO(NODE *_node)				{ PO_Ary.push_back(_node);		}
 				void		insertKey(NODE *_node)				{ KEY_Ary.push_back(_node);		}
 				void		readfile(std::string);				//read .bench file
-				void		witefile();							//write .bench file with encryption
 				void		topological_sort();					// pre-process for logic cone
 				void		outputfile();
 				void		setOutputname(std::string _name);
@@ -63,7 +61,6 @@ class encryption{
 		std::vector<NODE*>				OR_Ary;
 		std::map<std::string, NODE*>	name2node;
 		std::string 			 		key;
-		std::vector<CONE*>				LogicCone;
 		std::string	 			 		filename;	
 		std::string	 			 		outputname;
 		bool 					 		twolevelfile;
@@ -72,16 +69,9 @@ class encryption{
 		std::vector<int>				visited;
 		std::vector<int>				in_degree;
 		std::vector<int>				hue;
-		void							AND_encryption(CONE*);
-		void							OR_encryption(CONE*);
-		void							constructEncryKey(FType, NODE*, NODE*,double ); 
 		double							threshold;
 		int 							surplus_area;
 		int 	 						constraint;
-		void							ezXorenc(NODE*);
-		void							ezXnorenc(NODE*);
-		void							ezAndenc(NODE*);
-		void							ezOrenc(NODE*);
 		// fault base example num
 		int 							test_num;
 };
