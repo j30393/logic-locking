@@ -159,6 +159,26 @@ std::pair<bool, int> compareAndHammingDistance(const std::vector<bool>& vec1, co
     return std::make_pair(areEqual, hammingDistance);
 }
 
+// identify what we want to encrypt
+std::vector<NODE*> getTopKNodes(const std::vector<NODE*>& nodes, size_t k) {
+    // Copy the nodes to a new vector to avoid modifying the original
+    std::vector<NODE*> sorted_nodes = nodes;
+
+    // Sort the nodes based on fault_impact in descending order
+    std::sort(sorted_nodes.begin(), sorted_nodes.end(), [](NODE* a, NODE* b) {
+        return a->fault_impact > b->fault_impact;
+    });
+
+    // If k is greater than the number of nodes, adjust k
+    if (k > sorted_nodes.size()) {
+        k = sorted_nodes.size();
+    }
+
+    // Select the top k nodes
+    std::vector<NODE*> top_k_nodes(sorted_nodes.begin(), sorted_nodes.begin() + k);
+    return top_k_nodes;
+}
+
 // fault impact calculation 
 void encryption::fault_impact_cal(){
 	int num_tested = get_test_num();
@@ -199,9 +219,9 @@ void encryption::fault_impact_cal(){
 			n->setStuckFaulting(false);
 		}
 	}
-
+	//setDebugMode(true);
 	for(auto node: NODE_Ary){
-		node->fault_impact = (node->NoO0 * node->NoP0 + node->NoO1 * node->NoP1); 
+		node->fault_impact = (node->NoO0 * node->NoP0 + node->NoO1 * node->NoP1);
 		if(is_debug){
 			std::cout << "Node " << node->getName() << " fault impact: " << node->fault_impact << std::endl;
 		}
@@ -213,6 +233,7 @@ void encryption::fault_impact_cal(){
 			std::cout << "NoO1: " << node->NoO1 << " NoP1: " << node->NoP1 << std::endl;
 		}
 	}
+	//setDebugMode(false);
 	
 
 	//setDebugMode(true);
@@ -232,6 +253,137 @@ void encryption::fault_impact_cal(){
 	}
 	//setDebugMode(false);
 	return;
+}
+
+
+// xor encryption 
+void encryption::xor_encryption(){
+	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	assert(total_enc_num <= NODE_Ary.size());
+	if(is_debug){
+		std::cout << "encryption a total of " << total_enc_num << " nodes" << std::endl;
+	}
+	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
+	std::vector<bool>key_arr (total_enc_num, false);
+	for(auto &&key_element : key_arr){
+		key_element = rand() % 2;
+		if(key_element == 0){
+			key += "0";
+		}
+		else{
+			key += "1";
+		}
+	}
+
+	if(is_debug){
+		std::cout << "encryption key_arr: ";
+		for(auto key_element: key_arr){
+			std::cout << key_element << " ";
+		}
+	}
+
+	// If the key-bit is ‘0’, then the key-gate
+	// structure can be either ‘XOR- gate’ or ‘ XNOR- gate + inverter ’. 
+	// Similarly, if the key-bit is ‘1’, then the key-gate
+	// structure can be either ‘XNOR-gate’ or ‘ NOR- gate + inverter ’.
+
+	for(int i = 0; i < total_enc_num; i++){
+		NODE* enc_node = enc_nodes[i];
+		if(key_arr[i] == 0){
+			// XOR gate
+			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+			KEY_Ary.push_back(key_node);
+			int type = rand() % 2;
+			if(type == 1){
+				// xor gate
+				NODE* xor_node = new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i));
+				ENCY_Ary.push_back(xor_node);
+				xor_node->insertFI(enc_node);
+				xor_node->insertFI(key_node);
+				enc_node->setEncNode(xor_node);
+				enc_node->setEncryption(true);
+				// if we are operating on the output node
+				if(enc_node->getFO().size() == 0){
+					PO_Ary.push_back(xor_node);
+				}
+				else{ // none output node
+					for(auto fan_out_node : enc_node->getFO()){
+						fan_out_node->insertFI(xor_node);
+						fan_out_node->eraseFI(enc_node);
+					}
+				}
+			}
+			else{
+				// xnor gate + not
+				NODE* xnor_node = new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
+				ENCY_Ary.push_back(xnor_node);
+				xnor_node->insertFI(enc_node);
+				xnor_node->insertFI(key_node);
+				NODE* not_node = new NODE(Type::Intl, FType::NOT, "not" + std::to_string(i));
+				ENCY_Ary.push_back(not_node);
+				not_node->insertFI(xnor_node);
+				enc_node->setEncNode(not_node);
+				enc_node->setEncryption(true);
+				// if we are operating on the output node
+				if(enc_node->getFO().size() == 0){
+					PO_Ary.push_back(not_node);
+				}
+				else{ // none output node
+					for(auto fan_out_node : enc_node->getFO()){
+						fan_out_node->insertFI(not_node);
+						fan_out_node->eraseFI(enc_node);
+					}
+				}
+			}
+		}
+		else{
+			// XNOR gate
+			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+			KEY_Ary.push_back(key_node);
+			int type = rand() % 2;
+			if(type == 1){
+				// xnor gate
+				NODE* xnor_node = new NODE(Type::Intl, FType::XNOR, "xor" + std::to_string(i));
+				ENCY_Ary.push_back(xnor_node);
+				xnor_node->insertFI(enc_node);
+				xnor_node->insertFI(key_node);
+				enc_node->setEncNode(xnor_node);
+				enc_node->setEncryption(true);
+				// if we are operating on the output node
+				if(enc_node->getFO().size() == 0){
+					PO_Ary.push_back(xnor_node);
+				}
+				else{ // none output node
+					for(auto fan_out_node : enc_node->getFO()){
+						fan_out_node->insertFI(xnor_node);
+						fan_out_node->eraseFI(enc_node);
+					}
+				}
+			}
+			else{
+				// xor gate + not
+				NODE* xor_node = new NODE(Type::Intl, FType::XOR, "xnor" + std::to_string(i));
+				ENCY_Ary.push_back(xor_node);
+				xor_node->insertFI(enc_node);
+				xor_node->insertFI(key_node);
+				NODE* not_node = new NODE(Type::Intl, FType::NOT, "not" + std::to_string(i));
+				ENCY_Ary.push_back(not_node);
+				not_node->insertFI(xor_node);
+				enc_node->setEncNode(not_node);
+				enc_node->setEncryption(true);
+				// if we are operating on the output node
+				if(enc_node->getFO().size() == 0){
+					PO_Ary.push_back(not_node);
+				}
+				else{ // none output node
+					for(auto fan_out_node : enc_node->getFO()){
+						fan_out_node->insertFI(not_node);
+						fan_out_node->eraseFI(enc_node);
+					}
+				}
+			}
+		}
+	}
 }
 
 
@@ -589,7 +741,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			// p =  _node set
 			_node->setEncNode(tem);
 			_node->setEncryption(true);
-			_node->setEncType(FType::XOR);
 			key += "0";
 		}
 		else{//XNOR
@@ -618,7 +769,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			// p =  _node set
 			_node->setEncNode(temNot);
 			_node->setEncryption(true);
-			_node->setEncType(FType::XNOR);
 			key += "1";
 		}
 	}
@@ -645,7 +795,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			// p =  _node set
 			_node->setEncNode(tem);
 			_node->setEncryption(true);
-			_node->setEncType(FType::XOR);
 			key += "0";
 		}
 		else{//XNOR
@@ -674,7 +823,6 @@ void encryption::constructEncryKey(FType _ft, NODE* _combinekey, NODE* _node, do
 			// p =  _node set
 			_node->setEncNode(temNot);
 			_node->setEncryption(true);
-			_node->setEncType(FType::XNOR);
 			key += "1";
 		}
 	}
