@@ -38,6 +38,203 @@ void encryption::graph_traverse(){
 	}
 }
 
+// add solver
+std::vector<bool> encryption::solver(std::vector<bool> input){
+	std::vector<bool> output;
+	assert(input.size() == PI_Ary.size());
+	for(auto n : NODE_Ary){
+		n->setCurrentOutput(2);
+	}
+	for(int i = 0; i < PI_Ary.size(); i++){
+		if(NODE_Ary[i]->is_StuckFaulting()){
+			NODE_Ary[i]->setCurrentOutput(NODE_Ary[i]->getStuckFaultValue());
+		}
+		else{
+			NODE_Ary[i]->setCurrentOutput(input[i]);
+		}
+		output.push_back(NODE_Ary[i]->getCurrentOutput());
+	}
+	// calculate the output 
+	for(int i = PI_Ary.size(); i < NODE_Ary.size(); i++){
+		// n is the current node
+		NODE* n = NODE_Ary[i];
+		int ans = -1;
+		for(auto p : n->getFI()){
+			if(p->getCurrentOutput() == 2){
+				std::cout << "Current node: " << n->getName() << std::endl;
+				std::cout << "fan in name: " << p->getName() << std::endl;
+				std::cout << "error: topology sort failed" << std::endl;
+			}
+		}
+		if(n->is_StuckFaulting()){
+			ans = n->getStuckFaultValue();
+		}
+		else{
+			switch(n->getFtype()){
+				case(FType::AND):{
+					ans = 1;
+					for(auto p : n->getFI()){
+						ans = ans & p->getCurrentOutput();
+					}
+					break;
+				}
+				case(FType::OR):{
+					ans = 0;
+					for(auto p : n->getFI()){
+						ans = ans | p->getCurrentOutput();
+					}
+					break;
+				}
+				case(FType::NAND):{
+					ans = 1;
+					for(auto p : n->getFI()){
+						ans = ans & p->getCurrentOutput();
+					}
+					ans = !ans;
+					break;
+				}
+				case(FType::NOR):{
+					ans = 0;
+					for(auto p : n->getFI()){
+						ans = ans | p->getCurrentOutput();
+					}
+					ans = !ans;
+					break;
+				}
+				case(FType::XOR):{
+					ans = 0;
+					for(auto p : n->getFI()){
+						ans = ans ^ p->getCurrentOutput();
+					}
+					break;
+				}
+				case(FType::XNOR):{
+					ans = 0;
+					for(auto p : n->getFI()){
+						ans = ans ^ p->getCurrentOutput();
+					}
+					ans = !ans;
+					break;
+				}
+				case(FType::NOT):{
+					assert(n->getFIlen() == 1);
+					ans = !n->getFI()[0]->getCurrentOutput();
+					break;
+				}
+				case(FType::BUF):{
+					assert(n->getFIlen() == 1);
+					ans = n->getFI()[0]->getCurrentOutput();
+					break;
+				}
+				default:{
+					std::cout << "error: unexpected type" << std::endl;
+				}
+			}
+		}
+		n->setCurrentOutput(ans);
+		output.push_back(ans);
+	}
+	assert(output.size() == NODE_Ary.size());
+	return output;
+}
+
+std::pair<bool, int> compareAndHammingDistance(const std::vector<bool>& vec1, const std::vector<bool>& vec2) {
+    // Check if the sizes are the same
+    if (vec1.size() != vec2.size()) {
+        throw std::invalid_argument("Vectors must be of the same length");
+    }
+
+    bool areEqual = true;
+    int hammingDistance = 0;
+
+    // Compare elements and calculate Hamming distance
+    for (size_t i = 0; i < vec1.size(); ++i) {
+        if (vec1[i] != vec2[i]) {
+            areEqual = false;
+            hammingDistance++;
+        }
+    }
+	// std::cout << hammingDistance << std::endl;
+
+    return std::make_pair(areEqual, hammingDistance);
+}
+
+// fault impact calculation 
+void encryption::fault_impact_cal(){
+	int num_tested = get_test_num();
+	std::vector<bool> test_pattern(PI_Ary.size(), false);
+	std::vector<bool> golden_output;
+	std::vector<bool> sa0_output;
+	std::vector<bool> sa1_output;
+
+	for(int iteration = 0 ; iteration < num_tested ; iteration++){
+		for(int i = 0; i < PI_Ary.size(); i++){
+			test_pattern[i] = rand() % 2;
+		}
+		/*for(auto num : test_pattern){
+			std::cout << num << " ";
+		}*/
+		golden_output = solver(test_pattern);
+		for(auto n : NODE_Ary){
+			// stuck at 0
+			n->setStuckFaulting(true);
+			n->setStuckFaultValue(0);
+			sa0_output = solver(test_pattern);
+			std::pair<int,int> result = compareAndHammingDistance(golden_output, sa0_output);
+			if(!result.first){ // difference
+				n->NoO0 ++ ;
+				n->NoP0 += result.second;
+			}
+			n->setStuckFaulting(false);
+
+			// stuck at 1
+			n->setStuckFaulting(true);
+			n->setStuckFaultValue(1);
+			sa1_output = solver(test_pattern);
+			result = compareAndHammingDistance(golden_output, sa1_output);
+			if(!result.first){ // difference
+				n->NoO1++;
+				n->NoP1 += result.second;
+			}
+			n->setStuckFaulting(false);
+		}
+	}
+
+	for(auto node: NODE_Ary){
+		node->fault_impact = (node->NoO0 * node->NoP0 + node->NoO1 * node->NoP1); 
+		if(is_debug){
+			std::cout << "Node " << node->getName() << " fault impact: " << node->fault_impact << std::endl;
+		}
+	}
+	if(is_debug){
+		for(auto node: NODE_Ary){
+			std::cout << "Node " << node->getName() << std::endl;
+			std::cout << "NoO0: " << node->NoO0 << " NoP0: " << node->NoP0 << std::endl;
+			std::cout << "NoO1: " << node->NoO1 << " NoP1: " << node->NoP1 << std::endl;
+		}
+	}
+	
+
+	//setDebugMode(true);
+	if(is_debug){
+		int pattern_size = PI_Ary.size();
+		int output_size = NODE_Ary.size() - PI_Ary.size();
+		for(int i = 0; i < NODE_Ary.size(); i++){
+			if(i < PI_Ary.size()){
+				std::cout << "Node " << i << " : " << PI_Ary[i]->getName() << std::endl;
+				std::cout << "Test value : " << test_pattern[i] << std::endl;
+			}
+			else{
+				std::cout << "Node " << i << " : " << NODE_Ary[i]->getName() << std::endl;
+				std::cout << "Output value : " << golden_output[i- PI_Ary.size()] << std::endl;
+			}
+		}
+	}
+	//setDebugMode(false);
+	return;
+}
+
+
 void encryption::setOutputname(std::string _name){
 	twolevelfile = true;
 	outputname = _name;
@@ -263,8 +460,6 @@ void encryption::readfile(std::string _filename){
 		buffer.clear();
 	}
 	input.close();
-
-
 	//std::cout<<constraint<<std::endl;
 }
 

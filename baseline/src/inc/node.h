@@ -38,15 +38,15 @@ class NODE;
 
 class NODE{
 	public:
-
 		NODE()
-			:CO(0), enc(false), t(Type::Intl), ft(FType::BUF), name(""), path_len(0), and_counter(0), or_counter(0), id(0), depth(-0xfffffff){
+			:CO(0), enc(false), t(Type::Intl), ft(FType::BUF), name(""), path_len(0), and_counter(0), 
+			or_counter(0), id(0), depth(-0xfffffff), is_stuck_faulting(false), fault_impact(0) , NoO0(0), 
+			NoP0(0), NoO1(0), NoP1(0){
 		}
 
-
-
 		NODE(Type _t, FType _ft, std::string _name)
-			:CO(0), t(_t), ft(_ft), name(_name), path_len(0), and_counter(0), or_counter(0), id(0), enc(false), depth(-0xfffffff){
+			:CO(0), t(_t), ft(_ft), name(_name), path_len(0), and_counter(0), or_counter(0), id(0), enc(false), 
+			depth(-0xfffffff), is_stuck_faulting(false), fault_impact(0) , NoO0(0), NoP0(0), NoO1(0), NoP1(0){
 		}
 
 		~NODE(){
@@ -118,9 +118,18 @@ class NODE{
 		const	int 		getCO ()					{ return CO; 						} 
 				bool 		path3length(NODE*, int);
 		// 109062233 add for stuck at fault 
-		const	bool		getCurrentOutput()			{ return current_output;			}
-				void		setCurrentOutput(bool _b)	{ current_output = _b;				}
-				void		setStuckFault(bool _b)		{ stuck_fault = _b;					}
+		const	int			getCurrentOutput()			{ return current_output;			}
+				void		setCurrentOutput(int _b)	{ current_output = _b;				}
+				void		setStuckFaultValue(bool _b)	{ stuck_fault_value = _b;			}
+		const	bool		getStuckFaultValue()		{ return stuck_fault_value;			}
+		const	bool		is_StuckFaulting()			{ return is_stuck_faulting;			}
+				void		setStuckFaulting(bool _b)	{ is_stuck_faulting = _b;			}
+				// 109062233 add for stuck at fault
+		int					NoP0; // detect the stuck at 0 fault
+		int					NoO0; // affect bits for stuck at 0 fault	
+		int					NoP1; // detect the stuck at 1 fault
+		int					NoO1; // affect bits for stuck at 1 fault
+		unsigned long long int	fault_impact;
 	private:
 		Type				t;
 		FType				ft;
@@ -134,11 +143,11 @@ class NODE{
 		bool				enc;
 		FType				enc_type;
 		NODE*				enc_node;
-		bool				current_output;
-		bool 				stuck_fault;
+		int				current_output;
+		bool 				stuck_fault_value;
+		bool				is_stuck_faulting;
 		int 	  			CO;				//observability 	
 		int					depth;
-
 };
 
 bool compareCO(NODE* _node1, NODE *_node2);

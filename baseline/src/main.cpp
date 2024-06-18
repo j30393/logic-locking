@@ -55,13 +55,15 @@ int main(int argc, char* argv[]){
 			std::cout<<p->getName()<<std::endl;
 		}
 	#endif
-		std::srand((unsigned)time( NULL ) );
+		std::srand((unsigned)9487);
 		encryption* enc = new encryption();
 		if(argc == 3)
 			enc->setOutputname(argv[2]);
 		enc->readfile(argv[1]);
 		enc->setDebugMode(false);
+		enc->set_test_num(5000);
 		enc->topological_sort();
+		enc->fault_impact_cal();
 		//enc->graph_traverse();
 		//enc->outputfile();
 	return 0;

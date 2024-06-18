@@ -44,6 +44,11 @@ class encryption{
 				void		setOutputname(std::string _name);
 				void 		graph_traverse();
 				void		setDebugMode(bool _debug)			{ is_debug = _debug;			}
+				// fault base 
+				void		set_test_num(int _num)				{ test_num = _num;				}
+		const	int			get_test_num()						{ return test_num;				}
+				void		fault_impact_cal();
+		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
 	private:
 		std::vector<NODE*>				NODE_Ary;
 		std::vector<NODE*>				PI_Ary;
@@ -73,6 +78,8 @@ class encryption{
 		void							ezXnorenc(NODE*);
 		void							ezAndenc(NODE*);
 		void							ezOrenc(NODE*);
+		// fault base example num
+		int 							test_num;
 };
 
 #endif
