@@ -74,6 +74,7 @@ void encryption::readfile(std::string _filename){
 			if(it == name2node.end() ){
 				n =new NODE(t, ft, name);
 				n->setId(coun++); //set ID	
+				n->setDepth(0); //set depth
 				NODE_Ary.push_back(n);
 				name2node[name] = n; 
 			}
@@ -276,9 +277,6 @@ std::ostream& operator<<(std::ostream& os, NODE* p){
 	os<<"ID: "<<p->getId()<<std::endl;
 	os<<"And Count: "<<p->getAndC()<<std::endl;
 	os<<"Or Count: "<<p->getOrC()<<std::endl;
-	os<<"CCO -> "<<p->getCC0()<<std::endl;
-	os<<"CC1 -> "<<p->getCC1()<<std::endl;
-	os<<"CO -> "<<p->getCO()<<std::endl;
 	os<<"FI node : ";
 	for(auto q :p->getFI()){
 		os<<q->getName()<<" ";
@@ -287,160 +285,81 @@ std::ostream& operator<<(std::ostream& os, NODE* p){
 	for(auto q :p->getFO()){
 		os<<q->getName()<<" ";
 	}
+	os << "\ndepth "  << p->getDepth()<<std::endl ; 
+
 	os<<"\n-------------------------------------------------------\n";
 	return os;
 }
 
 bool compareNode(NODE *_node1, NODE *_node2 ){
-	return _node1->getEnd() > _node2->getEnd();
+	return _node1->getDepth() > _node2->getDepth();
 }
 
-void encryption::controllability(){
-	for(auto p :NODE_Ary){
-		int min = 2147483640;
-		int max = 0;
-		int a,b;
-		if(p->getType() == Type::PI){
-			p->setCC0(1);
-			p->setCC1(1);
-		}
-		else{
-			switch(p->getFtype())
-			{
-				case FType::AND   	:  
-					min = 2147483640;
-					max = 0;
-					for(auto q: p->getFI()){
-						max += q->getCC1();
-						if(min > q->getCC0())
-							min = q->getCC0();
-					}
-					p->setCC0(min+1);
-					p->setCC1(max+1);
-					break;
-				case FType::OR 		:  
-					min = 2147483640;
-					max = 0;
-					for(auto q: p->getFI()){
-						max += q->getCC0();
-						if(min > q->getCC1())
-							min = q->getCC1();
-					}
-					p->setCC0(max+1);
-					p->setCC1(min+1);
-					break;
-				case FType::NOR 	:  
-					min = 2147483640;
-					max = 0;
-					for(auto q: p->getFI()){
-						max += q->getCC0();
-						if(min > q->getCC1())
-							min = q->getCC1();
-					}
-					p->setCC0(min+1);
-					p->setCC1(max+1);
-					break;
-				case FType::NAND 	:  
-					min = 2147483640;
-					max = 0;
-					for(auto q: p->getFI()){
-						max += q->getCC1();
-						if(min > q->getCC0())
-							min = q->getCC0();
-					}
-					p->setCC0(max+1);
-					p->setCC1(min+1);
-					break;
-				case FType::NOT 	: 
-					p->setCC0(p->getFI()[0]->getCC1()+1);
-					p->setCC1(p->getFI()[0]->getCC0()+1);
-					break;
-				case FType::XNOR 	:
-					if(p->getFI().size() == 0)
-						break;
-					else if(p->getFI().size() == 1){
-						a = p->getFI()[0]->getCC0() + p->getFI()[0]->getCC1();
-						p->setCC0(a+1);
-						break;
-					}
-
-					a = p->getFI()[0]->getCC0() + p->getFI()[1]->getCC1();
-					b = p->getFI()[1]->getCC0() + p->getFI()[0]->getCC1();
-					p->setCC0(std::min(a, b)+1);
-					a = p->getFI()[0]->getCC0() + p->getFI()[1]->getCC0();
-					b = p->getFI()[1]->getCC1() + p->getFI()[0]->getCC1();
-					p->setCC1(std::min(a, b)+1);
-					break;
-				case FType::XOR 	:  
-					if(p->getFI().size() == 0)
-						break;
-					else if(p->getFI().size() == 1){
-						a = p->getFI()[0]->getCC0() + p->getFI()[0]->getCC1();
-						p->setCC0(a+1);
-						break;
-					}
-					a = p->getFI()[0]->getCC0() + p->getFI()[1]->getCC1();
-					b = p->getFI()[1]->getCC0() + p->getFI()[0]->getCC1();
-					p->setCC0(std::min(a, b)+1);
-					a = p->getFI()[0]->getCC0() + p->getFI()[1]->getCC0();
-					b = p->getFI()[1]->getCC1() + p->getFI()[0]->getCC1();
-					p->setCC1(std::min(a, b)+1);
-					break;
-				case FType::BUF 	:  
-					if(p->getFI().size() == 0)
-						break;
-					p->setCC0(p->getFI()[0]->getCC0()+1);
-					p->setCC1(p->getFI()[0]->getCC1()+1);
-					break;
-				default    			:  
-					if(p->getFI().size() == 0)
-						break;
-					p->setCC0(p->getFI()[0]->getCC0()+1);
-					p->setCC1(p->getFI()[0]->getCC1()+1);
-			}
-		}
-	}
-}
-
-
-void encryption::DFS(int _id, int* _time){
-//	std::cout<<*_time<<std::endl;
-
-	color[_id] = 2; //gray
-	NODE_Ary[_id]->setStart((*_time)++);	
-	for(auto p : NODE_Ary[_id]->getFO()){
-		if(color[p->getId()] == 0){
-			DFS(p->getId(), _time);	
-		}
-	}
-//	std::cout<<*_time<<std::endl;
-	color[_id] = 1;//black
-	NODE_Ary[_id]->setEnd((*_time)++);
-
-}
-
-
+/**
+ * Topological sort for the graph using kahn's algorithm
+ * https://www.geeksforgeeks.org/topological-sorting-indegree-based-solution/
+ * 
+ * @param none
+ * @return none but finish the depth information for that graph (depth...etc)
+ */
 void encryption::topological_sort(){
 
-	color.resize(NODE_Ary.size());
-
-	std::fill(color.begin(), color.end(), 0);
-
-
-	int time = 0;
+	visited.resize(NODE_Ary.size());
+	in_degree.resize(NODE_Ary.size());
+	std::fill(visited.begin(), visited.end(), 0);
+	std::fill(in_degree.begin(), in_degree.end(), 0);
 	
-//	for(size_t i=0;i<NODE_Ary.size();i++)
-//		std::cout<<color[i]<<std::endl;
-
 	for(auto p : NODE_Ary){
-		if(color[p->getId()]==0){
-			DFS(p->getId() , &time);
+		for(auto q : p->getFO()){
+			in_degree[q->getId()]++;
 		}
 	}
 
-	std::sort(NODE_Ary.begin(), NODE_Ary.end(), compareNode); //sory by finifsh time
-	// make controllability
-	controllability();
+	std::queue<NODE*> q;
+
+	for(auto p : NODE_Ary){
+		if(in_degree[p->getId()] == 0){
+			q.push(p);
+			p->setDepth(0);
+		}
+	}
+
+	std::vector<NODE*> result;
+
+    while (!q.empty()) {
+        NODE* node = q.front();
+        q.pop();
+		if(node->getDepth() == -0xfffffff){
+			int depth = -1;
+			for(auto children : node->getFI()){
+				depth = std::max(depth, children->getDepth());
+			}
+			node->setDepth(depth+1);
+		}
+        result.push_back(node);
+       
+        // Decrease indegree of adjacent vertices as the
+        // current node is in topological order
+        for (auto it : node->getFO()) {
+            in_degree[it->getId()]--;
+           
+            // If indegree becomes 0, push it to the queue
+            if (in_degree[it->getId()] == 0)
+                q.push(it);
+        }
+    }
+ 
+    // Check for cycle
+    if (result.size() != NODE_Ary.size()) {
+        std::cout << "Graph contains cycle!" << std::endl;
+    }
+ 
+	for(auto it: result){
+		std::cout << it << std::endl;
+	}
+
+
+	//std::sort(NODE_Ary.begin(), NODE_Ary.end(), compareNode); //sory by finifsh time
 
 
 	int count = 0;
@@ -511,18 +430,18 @@ void encryption::RecursiveLogicCone(CONE* _cone, NODE* _node, FType _ft){
 		for(auto p :_node->getFI()){
 			if(p->getAndC() == 0){
 				_cone->insertInput(NODE_Ary[p->getId()]);
-				color[p->getId()] = 1;
+				visited[p->getId()] = 1;
 			}
 			else if(p->getAndC() >= 1){
 			//	std::cout<<"recursive : "<<p->getName()<<std::endl;
 				//std::cout<<( _cone->getInput().size() + p->getFI().size() )<<std::endl;
 				if( ( _cone->getInput().size() + p->getFI().size() ) >= constraint){
 					_cone->insertInput(NODE_Ary[p->getId()]);
-					color[p->getId()] = 1;
+					visited[p->getId()] = 1;
 					return ;	
 				}
 				else{
-					color[p->getId()] = 1;
+					visited[p->getId()] = 1;
 					RecursiveLogicCone(_cone, NODE_Ary[p->getId()], _ft);
 				}
 			}
@@ -538,7 +457,7 @@ void encryption::RecursiveLogicCone(CONE* _cone, NODE* _node, FType _ft){
 			else if(p->getOrC() >= 1){
 				if( ( _cone->getInput().size() + p->getFI().size() ) >= constraint){
 					_cone->insertInput(NODE_Ary[p->getId()]);
-					color[p->getId()] = 1;
+					visited[p->getId()] = 1;
 					return ;	
 				}
 				else{
@@ -551,118 +470,18 @@ void encryption::RecursiveLogicCone(CONE* _cone, NODE* _node, FType _ft){
 	}
 }
 
-void encryption::observability(){
-	for(auto p :NODE_Ary){
-		int a = 0;
-		int b = 0;
-		if(p->getType() == Type::PO){
-			p->setCO(0);
-		}
-		switch(p->getFtype())
-		{
-			case FType::AND   	:  
-				for(auto q: p->getFI()){
-					a = 0;
-					for(auto z: p->getFI()){
-						if(q->getName() != z->getName()){
-							a += z->getCC1();
-						}
-					}
-					q->setCO( p->getCO() + a + 1);
-				}
-				break;
-			case FType::OR 		:  
-				for(auto q: p->getFI()){
-					a = 0;
-					for(auto z: p->getFI()){
-						if(q->getName() != z->getName()){
-							a += z->getCC0();
-						}
-					}
-					q->setCO( p->getCO() + a + 1);
-				}
-				break;
-			case FType::NOR 	:  
-				for(auto q: p->getFI()){
-					a = 0;
-					for(auto z: p->getFI()){
-						if(q->getName() != z->getName()){
-							a += z->getCC0();
-						}
-					}
-					q->setCO( p->getCO() + a + 1);
-				}
-				break;
-			case FType::NAND 	:  
-				for(auto q: p->getFI()){
-					a = 0;
-					for(auto z: p->getFI()){
-						if(q->getName() != z->getName()){
-							a += z->getCC1();
-						}
-					}
-					q->setCO( p->getCO() + a + 1);
-				}
-				break;
-			case FType::NOT 	: 
-					if(p->getFI().size() == 0)
-						break;
-				p->getFI()[0]->setCO( p->getCO() +1);
-				break;
-			case FType::XNOR 	:
-					if(p->getFI().size() == 0)
-						break;
-					else if(p->getFI().size() == 1){
-						a = p->getFI()[0]->getCC0() + p->getFI()[0]->getCC1();
-						p->setCC0(a+1);
-						break;
-					}
-				a = p->getFI()[1]->getCC0();
-				b = p->getFI()[1]->getCC1();
-				p->getFI()[0]->setCO(std::min(a, b)+1+p->getCO());	
-				a = p->getFI()[0]->getCC0();
-				b = p->getFI()[0]->getCC1();
-				p->getFI()[1]->setCO(std::min(a, b)+1+p->getCO());	
-				break;
-			case FType::XOR 	:  
-					if(p->getFI().size() == 0)
-						break;
-					else if(p->getFI().size() == 1){
-						a = p->getFI()[0]->getCC0() + p->getFI()[0]->getCC1();
-						p->setCC0(a+1);
-						break;
-					}
-				a = p->getFI()[1]->getCC0();
-				b = p->getFI()[1]->getCC1();
-				p->getFI()[0]->setCO(std::min(a, b)+1+p->getCO());	
-				a = p->getFI()[0]->getCC0();
-				b = p->getFI()[0]->getCC1();
-				p->getFI()[1]->setCO(std::min(a, b)+1+p->getCO());	
-				break;
-			case FType::BUF 	: 
-					if(p->getFI().size() == 0)
-						break;
-				if(p->getType() != Type::PI)
-					p->getFI()[0]->setCO( p->getCO() +1);
-				break;
-			default    			:
-				continue;
-		}
-	}
-}
 
 void encryption::Flogic_cone(){
 	
 	//reverse topological sort
 	std::reverse(NODE_Ary.begin(), NODE_Ary.end());
 	// make observility
-	observability();
 
 	/*for(auto p :NODE_Ary){
 		std::cout<<p<<std::endl;
 	}*/
 	hue.resize(NODE_Ary.size());
-	std::fill(color.begin(), color.end(), 0);
+	std::fill(visited.begin(), visited.end(), 0);
 	std::fill(hue.begin(), hue.end(), 0);
 	
 	int counc =0;
@@ -671,8 +490,8 @@ void encryption::Flogic_cone(){
 	}
 	
 	for(auto p: NODE_Ary){
-		if( color[p->getId()] == 0&& p->getFtype()== FType::AND){
-			color[p->getId()] = 1;
+		if( visited[p->getId()] == 0&& p->getFtype()== FType::AND){
+			visited[p->getId()] = 1;
 			CONE* c =new CONE(p->getFtype(), NODE_Ary[p->getId()]);
 			RecursiveLogicCone(c, NODE_Ary[p->getId()], p->getFtype());
 			LogicCone.push_back(c);

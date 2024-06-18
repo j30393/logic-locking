@@ -11,18 +11,6 @@
 
 #define debug
 
-#define cost(arg1,arg2) ({ \
-	int flag = 0; \
-	if(arg1 == FType::XNOR || arg1 == FType::XOR) {\
-		flag = 3; \
-	} else if(arg1 == FType::NOT || arg1 == FType::BUF){\
-		flag = 1; \
-	} else { \
-		flag = (int)arg2-1;\
-	}\
-	flag; \
-})
-
 enum class Type{ 
 	Intl, 
 	PI, 
@@ -52,13 +40,13 @@ class NODE{
 	public:
 
 		NODE()
-			:CC0(0), CC1(0), CO(0), enc(false), t(Type::Intl), ft(FType::BUF), name(""), path_len(0), and_counter(0), or_counter(0), start(0), end(0), id(0){
+			:CO(0), enc(false), t(Type::Intl), ft(FType::BUF), name(""), path_len(0), and_counter(0), or_counter(0), id(0), depth(-0xfffffff){
 		}
 
 
 
 		NODE(Type _t, FType _ft, std::string _name)
-			:CC0(0), CC1(0), CO(0), t(_t), ft(_ft), name(_name), path_len(0), and_counter(0), or_counter(0), start(0), end(0), id(0), enc(false){
+			:CO(0), t(_t), ft(_ft), name(_name), path_len(0), and_counter(0), or_counter(0), id(0), enc(false), depth(-0xfffffff){
 		}
 
 		~NODE(){
@@ -89,9 +77,10 @@ class NODE{
 		}
 		friend std::ostream& operator<<(std::ostream& os, NODE* p);
 
-		
+		// 109062233 add 
+		const 	int 		getDepth()					{ return depth;						}
+				void		setDepth(int _num)			{ depth = _num; 					}
 		//operator
-		const 	int 		getCost()					{ return cost(ft, FI_Ary.size());	}
 		const 	int 		getFIlen()					{ return FI_Ary.size();				} 
 		const 	int 		getFOlen()					{ return FO_Ary.size();				}
 				void		setFtype(FType _ft)			{ ft = _ft;							}
@@ -112,10 +101,6 @@ class NODE{
 		const 	int			getOrC()					{ return or_counter;				}
 				void		setAndC(int _num)			{ and_counter = _num; 				}
 				void		setOrC(int _num)			{ or_counter = _num; 				}
-		const 	int			getStart()					{ return start;						}
-		const 	int			getEnd()					{ return end;						}
-				void		setStart(int _num)			{ start = _num; 					}
-				void		setEnd(int _num)			{ end = _num; 						}
 		const 	int			getId()						{ return id;						}
 				void		setId(int _num)				{ id = _num; 						}
 		std::vector<NODE*>& getFI()						{ return FI_Ary;					}	
@@ -129,11 +114,7 @@ class NODE{
 				void 		setEncType(FType _ft)		{ enc_type = _ft;					}
 				NODE*		getEncNode()				{ return enc_node;					}
 				void 		setEncNode(NODE* _node)		{ enc_node = _node;					}
-				void		setCC0(int _num)			{ CC0 = _num; 						}
-				void		setCC1(int _num)			{ CC1 = _num; 						}
 				void		setCO (int _num)			{ CO  = _num; 						}
-		const	int 		getCC0()					{ return CC0; 						} 
-		const	int 		getCC1()					{ return CC1; 						} 
 		const	int 		getCO ()					{ return CO; 						} 
 				bool 		path3length(NODE*, int);
 	private:
@@ -146,14 +127,11 @@ class NODE{
 		int					and_counter; 
 		int					or_counter;
 		int 				id;
-		int					start;
-		int					end;
 		bool				enc;
 		FType				enc_type;
 		NODE*				enc_node;
-		int  				CC0;			//controllability 0
-		int  				CC1;			//controllability 1
 		int 	  			CO;				//observability 	
+		int					depth;
 };
 
 bool compareCO(NODE* _node1, NODE *_node2);

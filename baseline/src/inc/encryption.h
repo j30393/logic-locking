@@ -16,7 +16,8 @@
 #include <chrono>
 #include<cstring>
 #include <time.h>
-
+#include <stack>
+#include <queue>
 //#define bug
 
 
@@ -42,7 +43,6 @@ class encryption{
 				void		witefile();							//write .bench file with encryption
 				void		topological_sort();					// pre-process for logic cone
 				void		Flogic_cone();						//get logic cone
-				void		tree_encryption();					//encryption
 				void		outputfile();
 				void		setOutputname(std::string _name);
 				void 		graph_traverse();
@@ -61,7 +61,8 @@ class encryption{
 		std::string	 			 		outputname;
 		bool 					 		twolevelfile;
 		int 							keyCount;	
-		std::vector<int>				color;
+		std::vector<int>				visited;
+		std::vector<int>				in_degree;
 		std::vector<int>				hue;
 		void							DFS(int,int*);
 		void 							RecursiveFtype(NODE* _node, int& max, FType _ft);
@@ -69,7 +70,6 @@ class encryption{
 		void							AND_encryption(CONE*);
 		void							OR_encryption(CONE*);
 		void							constructEncryKey(FType, NODE*, NODE*,double ); 
-		void							controllability();
 		void							observability();
 		double							threshold;
 		int 							surplus_area;

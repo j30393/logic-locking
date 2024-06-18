@@ -61,7 +61,7 @@ int main(int argc, char* argv[]){
 			enc->setOutputname(argv[2]);
 		enc->readfile(argv[1]);
 		enc->topological_sort();
-		enc->graph_traverse();
+		//enc->graph_traverse();
 		//enc->Flogic_cone();
 		//enc->outputfile();
 	return 0;
