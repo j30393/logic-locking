@@ -200,7 +200,7 @@ void encryption::fault_impact_cal(){
 			n->setStuckFaulting(true);
 			n->setStuckFaultValue(0);
 			sa0_output = solver(test_pattern);
-			std::pair<int,int> result = compareAndHammingDistance(golden_output, sa0_output);
+			std::pair<bool,int> result = compareAndHammingDistance(golden_output, sa0_output);
 			if(!result.first){ // difference
 				n->NoO0 ++ ;
 				n->NoP0 += result.second;
@@ -296,6 +296,7 @@ void encryption::xor_encryption(){
 			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
 			KEY_Ary.push_back(key_node);
 			int type = rand() % 2;
+			// TODO: Do we need to update fanout and/or name2node?
 			if(type == 1){
 				// xor gate
 				NODE* xor_node = new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i));
@@ -306,7 +307,9 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(xor_node);
+					xor_node->setName(enc_node->getName());
+					enc_node->setName(enc_node->getName() + std::to_string(i));
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 				}
 				else{ // none output node
 					for(auto fan_out_node : enc_node->getFO()){
@@ -328,7 +331,9 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(not_node);
+					not_node->setName(enc_node->getName());
+					enc_node->setName(enc_node->getName() + std::to_string(i));
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
 				}
 				else{ // none output node
 					for(auto fan_out_node : enc_node->getFO()){
@@ -353,7 +358,9 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(xnor_node);
+					xnor_node->setName(enc_node->getName());
+					enc_node->setName(enc_node->getName() + std::to_string(i));
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xnor_node;
 				}
 				else{ // none output node
 					for(auto fan_out_node : enc_node->getFO()){
@@ -375,7 +382,9 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(not_node);
+					not_node->setName(enc_node->getName());
+					enc_node->setName(enc_node->getName() + std::to_string(i));
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
 				}
 				else{ // none output node
 					for(auto fan_out_node : enc_node->getFO()){
