@@ -256,6 +256,100 @@ void encryption::fault_impact_cal(){
 }
 
 
+void encryption::sl_one_encryption() {
+	int total_enc_num = ceil(this->key_ratio * PI_Ary.size()), output_find = 0;
+	assert(total_enc_num <= NODE_Ary.size());
+
+	if(is_debug){
+		std::cout << "encryption a total of " << total_enc_num << " nodes" << "\n";
+	}
+
+	std::vector<bool>key_arr (total_enc_num, false);
+	for(auto &&key_element : key_arr){
+		key_element = rand() % 2;
+		if(key_element == 0){
+			key += "0";
+		}
+		else{
+			key += "1";
+		}
+	}
+
+	if(is_debug){
+		std::cout << "encryption key_arr: ";
+		for(auto key_element: key_arr){
+			std::cout << key_element << " ";
+		}
+		std::cout << "\n";
+	}
+
+	// find the nodes to be encrypted
+	std::queue<NODE *> to_be_checked;
+	std::vector<NODE *> to_be_enc;
+	while(to_be_enc.size() < total_enc_num && output_find <= PO_Ary.size()) {
+		if(to_be_checked.size() == 0) {
+			output_find++;
+			if(output_find > PO_Ary.size()) break;
+			to_be_checked.emplace(PO_Ary[output_find - 1]);
+		}
+
+		NODE *temp = to_be_checked.front();
+		to_be_checked.pop();
+
+		for(auto it: temp->getFI()) {
+			if(it->isEncryption()) continue;
+			it->setEncryption(1);
+			to_be_enc.emplace_back(it);
+			to_be_checked.emplace(it);
+		}
+	}
+
+	if(is_debug) {
+		std::cout << "Size of nodes to be encrypted: " << to_be_enc.size() << "\n";
+		std::cout << "Size of main outputs: " << PO_Ary.size() << "\n";
+		std::cout << "the stuff " << (to_be_enc.size() < total_enc_num) << (output_find <= PO_Ary.size()) << "\n";
+	}
+
+	// add key gates
+	while(!to_be_checked.empty()) to_be_checked.pop();
+	for(int i = 0; i < total_enc_num; i++) {
+		assert(i < to_be_enc.size());
+		NODE *enc_node = to_be_enc[i];
+		NODE *key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+		NODE *xor_node = new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i));
+
+		KEY_Ary.push_back(key_node);
+		ENCY_Ary.push_back(xor_node);
+
+		// make sure its not output, because im too lazy to implement that
+		assert(enc_node->getType() != Type::PO);
+
+		// original encoded node change
+		for(auto fan_out_node : enc_node->getFO()){
+			to_be_checked.emplace(fan_out_node);
+		}
+		enc_node->getFO().clear();
+		enc_node->insertFO(xor_node);
+		enc_node->setEncNode(xor_node);
+
+		// key node
+		key_node->insertFO(xor_node);
+
+		// xor node & all other nodes
+		xor_node->insertFI(enc_node);
+		xor_node->insertFI(key_node);
+		while(!to_be_checked.empty()) {
+			NODE *temp = to_be_checked.front();
+			to_be_checked.pop();
+
+			temp->eraseFI(enc_node);
+			temp->insertFI(xor_node);
+			xor_node->insertFO(temp);
+		}
+	}
+}
+
+
 // xor encryption 
 void encryption::xor_encryption(){
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());

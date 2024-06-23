@@ -49,6 +49,7 @@ class encryption{
 				void		fault_impact_cal();
 		float 		key_ratio;
 				void		xor_encryption();
+				void 		sl_one_encryption();
 		// fault base example num
 		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
 	private:

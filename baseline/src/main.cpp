@@ -9,9 +9,11 @@ int main(int argc, char* argv[]){
 	enc->setDebugMode(false);
 	enc->set_test_num(100); // number of testcase for fault impact 
 	enc->topological_sort();
-	enc->fault_impact_cal();
+	//enc->fault_impact_cal();
 	enc->key_ratio = 1; // ratio of number of key bits
-	enc->xor_encryption();
+	//enc->xor_encryption();
+	enc->setDebugMode(1);
+	enc->sl_one_encryption();
 	enc->outputfile();
 	return 0;
 }
