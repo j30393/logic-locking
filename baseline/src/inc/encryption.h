@@ -35,7 +35,9 @@ class encryption{
 		const	int			getKeylen()							{ return KEY_Ary.size();		}
 				void		insertNODE(NODE *_node)				{ NODE_Ary.push_back(_node);	}
 				void		insertPI(NODE *_node)				{ PI_Ary.push_back(_node);		}
+				void		erasePI(NODE *_node);
 				void		insertPO(NODE *_node)				{ PO_Ary.push_back(_node);		}
+				void		erasePO(NODE *_node);
 				void		insertKey(NODE *_node)				{ KEY_Ary.push_back(_node);		}
 				void		readfile(std::string);				//read .bench file
 				void		topological_sort();					// pre-process for logic cone

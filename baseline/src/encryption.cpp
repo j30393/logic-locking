@@ -316,7 +316,9 @@ void encryption::sl_one_encryption() {
 		assert(i < to_be_enc.size());
 		NODE *enc_node = to_be_enc[i];
 		NODE *key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
-		NODE *xor_node = new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i));
+		NODE *xor_node = (key_arr[i] == 0) ? 
+							new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i)):
+							new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
 
 		KEY_Ary.push_back(key_node);
 		ENCY_Ary.push_back(xor_node);
@@ -349,6 +351,23 @@ void encryption::sl_one_encryption() {
 	}
 }
 
+void encryption::erasePI(NODE *_node) {
+	for(auto it = PI_Ary.begin(); it != PI_Ary.end(); it++) {
+		if(*it == _node) {
+			PI_Ary.erase(it);
+			break;
+		}
+	}
+}
+
+void encryption::erasePO(NODE *_node) {
+	for(auto it = PO_Ary.begin(); it != PO_Ary.end(); it++) {
+		if(*it == _node) {
+			PO_Ary.erase(it);
+			break;
+		}
+	}
+}
 
 // xor encryption 
 void encryption::xor_encryption(){
