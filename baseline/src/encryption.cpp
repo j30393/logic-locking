@@ -260,10 +260,12 @@ void encryption::fault_impact_cal(){
 void encryption::xor_encryption(){
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
 	assert(total_enc_num <= NODE_Ary.size());
+	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
+	total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
+	assert(total_enc_num > 0);
 	if(is_debug){
 		std::cout << "encryption a total of " << total_enc_num << " nodes" << std::endl;
 	}
-	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
 	std::vector<bool>key_arr (total_enc_num, false);
 	for(auto &&key_element : key_arr){
 		key_element = rand() % 2;
@@ -285,7 +287,7 @@ void encryption::xor_encryption(){
 	// If the key-bit is ‘0’, then the key-gate
 	// structure can be either ‘XOR- gate’ or ‘ XNOR- gate + inverter ’. 
 	// Similarly, if the key-bit is ‘1’, then the key-gate
-	// structure can be either ‘XNOR-gate’ or ‘ NOR- gate + inverter ’.
+	// structure can be either ‘XNOR-gate’ or ‘ XOR- gate + inverter ’.
 
 	for(int i = 0; i < total_enc_num; i++){
 		NODE* enc_node = enc_nodes[i];

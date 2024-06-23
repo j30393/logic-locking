@@ -14,4 +14,4 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf *.o $(EXECUTABLE)
+	rm -rf $(OBJECTS) $(EXECUTABLE)
