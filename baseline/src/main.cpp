@@ -13,5 +13,6 @@ int main(int argc, char* argv[]){
 	enc->key_ratio = 1; // ratio of number of key bits
 	enc->xor_encryption();
 	enc->outputfile();
+	delete enc;
 	return 0;
 }
