@@ -285,6 +285,7 @@ void encryption::sl_compare_encryption() {
 	std::queue<std::pair<NODE *, bool>> to_be_checked, waiting_list;
 	std::vector<NODE *> to_be_enc;
 	while(to_be_enc.size() < total_enc_num) {
+		if(is_debug) std::cout << "Current to-be encrypted number: " << to_be_enc.size() << "\n";
 		if(to_be_checked.empty() && waiting_list.empty()) {
 			NODE *temp = initialize();
 			to_be_checked.emplace(temp, 0);
@@ -306,10 +307,11 @@ void encryption::sl_compare_encryption() {
 		to_be_checked.pop();
 
 		// To bypass not gates and buffers
-		while(arr.size() == 1) {
+		while(arr.size() == 1 && arr[0]->getType() != Type::PI) {
 			cur = arr[0];
-			arr = (way == 0) ? arr[0]->getFI() : arr[1]->getFO();
+			arr = (way == 0) ? cur->getFI() : cur->getFO();
 		}
+		if(is_debug) std::cout << "white people\n";
 
 		for(auto it: arr) {
 			if(it->isEncryption()) continue;
