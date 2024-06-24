@@ -291,6 +291,8 @@ void encryption::sl_one_encryption() {
 			output_find++;
 			if(output_find > PO_Ary.size()) break;
 			to_be_checked.emplace(PO_Ary[output_find - 1]);
+			PO_Ary[output_find - 1]->setEncryption(1);
+			to_be_enc.emplace_back(PO_Ary[output_find - 1]);
 		}
 
 		NODE *temp = to_be_checked.front();
@@ -324,29 +326,45 @@ void encryption::sl_one_encryption() {
 		ENCY_Ary.push_back(xor_node);
 
 		// make sure its not output, because im too lazy to implement that
-		assert(enc_node->getType() != Type::PO);
+		if(enc_node->getType() == Type::PO) {
+			//change encoded node
+			enc_node->setType(Type::Intl);
+			enc_node->insertFO(xor_node);
+			xor_node->setName(enc_node->getName());
+			enc_node->setName(enc_node->getName() + std::to_string(i));
+			*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 
-		// original encoded node change
-		for(auto fan_out_node : enc_node->getFO()){
-			to_be_checked.emplace(fan_out_node);
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			xor_node->setType(Type::PO);
+
+			// key node
+			key_node->insertFO(xor_node);
 		}
-		enc_node->getFO().clear();
-		enc_node->insertFO(xor_node);
-		enc_node->setEncNode(xor_node);
+		else {
+			// original encoded node change
+			for(auto fan_out_node : enc_node->getFO()){
+				to_be_checked.emplace(fan_out_node);
+			}
+			enc_node->getFO().clear();
+			enc_node->insertFO(xor_node);
+			enc_node->setEncNode(xor_node);
 
-		// key node
-		key_node->insertFO(xor_node);
+			// key node
+			key_node->insertFO(xor_node);
 
-		// xor node & all other nodes
-		xor_node->insertFI(enc_node);
-		xor_node->insertFI(key_node);
-		while(!to_be_checked.empty()) {
-			NODE *temp = to_be_checked.front();
-			to_be_checked.pop();
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			while(!to_be_checked.empty()) {
+				NODE *temp = to_be_checked.front();
+				to_be_checked.pop();
 
-			temp->eraseFI(enc_node);
-			temp->insertFI(xor_node);
-			xor_node->insertFO(temp);
+				temp->eraseFI(enc_node);
+				temp->insertFI(xor_node);
+				xor_node->insertFO(temp);
+			}
 		}
 	}
 }
