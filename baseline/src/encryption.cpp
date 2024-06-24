@@ -255,6 +255,174 @@ void encryption::fault_impact_cal(){
 	return;
 }
 
+void encryption::sl_compare_encryption() {
+	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	assert(total_enc_num <= NODE_Ary.size());
+
+	if(is_debug){
+		std::cout << "encryption a total of " << total_enc_num << " nodes" << "\n";
+	}
+
+	std::vector<bool>key_arr (total_enc_num, false);
+	for(auto &&key_element : key_arr){
+		key_element = rand() % 2;
+		if(key_element == 0){
+			key += "0";
+		}
+		else{
+			key += "1";
+		}
+	}
+
+	if(is_debug){
+		std::cout << "encryption key_arr: ";
+		for(auto key_element: key_arr){
+			std::cout << key_element << " ";
+		}
+		std::cout << "\n";
+	}
+
+	std::queue<std::pair<NODE *, bool>> to_be_checked, waiting_list;
+	std::vector<NODE *> to_be_enc;
+	while(to_be_enc.size() < total_enc_num) {
+		if(to_be_checked.empty() && waiting_list.empty()) {
+			NODE *temp = initialize();
+			to_be_checked.emplace(temp, 0);
+			to_be_checked.emplace(temp, 1);
+			to_be_enc.emplace_back(temp);
+			temp->setEncryption(1);
+		}
+		else if(to_be_checked.empty()) {
+			NODE *temp = waiting_list.front().first;
+			to_be_checked.emplace(waiting_list.front());
+			waiting_list.pop();
+			to_be_enc.emplace_back(temp);
+			temp->setEncryption(1);
+		}
+
+		NODE *cur = to_be_checked.front().first;
+		bool way = to_be_checked.front().second;
+		auto arr = (way == 0) ? cur->getFI() : cur->getFO();
+		to_be_checked.pop();
+
+		// To bypass not gates and buffers
+		while(arr.size() == 1) {
+			cur = arr[0];
+			arr = (way == 0) ? arr[0]->getFI() : arr[1]->getFO();
+		}
+
+		for(auto it: arr) {
+			if(it->isEncryption()) continue;
+			if(check_pairwise_secure(cur, it, way)) {
+				to_be_checked.emplace(it, way);
+				to_be_enc.emplace_back(it);
+				it->setEncryption(1);
+			}
+			else {
+				waiting_list.emplace(it, way);
+			}
+		}
+	}
+
+	// add key gates
+	std::queue<NODE *> checker;
+	while(!checker.empty()) checker.pop();
+
+	for(int i = 0; i < total_enc_num; i++) {
+		assert(i < to_be_enc.size());
+		NODE *enc_node = to_be_enc[i];
+		NODE *key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+		NODE *xor_node = (key_arr[i] == 0) ? 
+							new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i)):
+							new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
+
+		KEY_Ary.push_back(key_node);
+		ENCY_Ary.push_back(xor_node);
+
+		// make sure its not output, because im too lazy to implement that
+		if(enc_node->getType() == Type::PO) {
+			//change encoded node
+			enc_node->setType(Type::Intl);
+			enc_node->insertFO(xor_node);
+			xor_node->setName(enc_node->getName());
+			enc_node->setName(enc_node->getName() + std::to_string(i));
+			*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
+
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			xor_node->setType(Type::PO);
+
+			// key node
+			key_node->insertFO(xor_node);
+		}
+		else {
+			// original encoded node change
+			for(auto fan_out_node : enc_node->getFO()){
+				checker.emplace(fan_out_node);
+			}
+			enc_node->clearFO();
+			enc_node->insertFO(xor_node);
+			enc_node->setEncNode(xor_node);
+
+			// key node
+			key_node->insertFO(xor_node);
+
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			while(!checker.empty()) {
+				NODE *temp = checker.front();
+				checker.pop();
+
+				temp->eraseFI(enc_node);
+				temp->insertFI(xor_node);
+				xor_node->insertFO(temp);
+			}
+		}
+	}
+}
+bool encryption::check_pairwise_secure(NODE *main, NODE *bef, bool way) {
+	bool ret = 1;
+
+	if(way == 1) std::swap(main, bef);
+
+	FType main_type = main->getFtype(), nono_type[2];
+	if(main_type == FType::BUF || main_type == FType::NOT) return 0;
+	if(main_type == FType::XNOR || main_type == FType::XOR) return 1;
+	switch(main_type) {
+		case FType::AND   	: nono_type[0] = FType::AND, nono_type[1] = FType::NOR;		break;
+		case FType::OR 		: nono_type[0] = FType::OR, nono_type[1] = FType::NAND;		break;
+		case FType::NOR 	: nono_type[0] = FType::OR, nono_type[1] = FType::NAND;		break;
+		case FType::NAND 	: nono_type[0] = FType::AND, nono_type[1] = FType::NOR;		break;
+		default: {
+			if(is_debug) std::cout << "something happened and you should fix it\n";
+			assert(0);
+		}
+	}
+
+	for(auto it: main->getFI()) {
+		if(it == bef) continue;
+		if(it->getFtype() == nono_type[0] || it->getFtype() == nono_type[1]) return 0;
+	}
+
+	return 1;
+}
+
+NODE *encryption::initialize() {
+	int cur_max = 0;
+	NODE *ret_node = NULL;
+
+	for(auto it: NODE_Ary) {
+		if(it->isEncryption()) continue;
+		if(cur_max < it->getFOlen()) {
+			cur_max = it->getFOlen();
+			ret_node = it;
+		}
+	}
+	assert(ret_node != NULL);
+	return ret_node;
+}
 
 void encryption::sl_one_encryption() {
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size()), output_find = 0;
@@ -347,7 +515,7 @@ void encryption::sl_one_encryption() {
 			for(auto fan_out_node : enc_node->getFO()){
 				to_be_checked.emplace(fan_out_node);
 			}
-			enc_node->getFO().clear();
+			enc_node->clearFO();
 			enc_node->insertFO(xor_node);
 			enc_node->setEncNode(xor_node);
 

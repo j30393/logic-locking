@@ -49,9 +49,12 @@ class encryption{
 				void		set_test_num(int _num)				{ test_num = _num;				}
 		const	int			get_test_num()						{ return test_num;				}
 				void		fault_impact_cal();
+				NODE*		initialize();
+				bool		check_pairwise_secure(NODE*, NODE*, bool);
 		float 		key_ratio;
 				void		xor_encryption();
 				void 		sl_one_encryption();
+				void 		sl_compare_encryption();
 		// fault base example num
 		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
 	private:
