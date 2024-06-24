@@ -316,7 +316,8 @@ void encryption::xor_encryption(){
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
 					xor_node->setName(enc_node->getName());
-					enc_node->setName(enc_node->getName() + std::to_string(i));
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
 					assert(name2node.find(enc_node->getName()) == name2node.end());
 					name2node[xor_node->getName()] = xor_node;
 					name2node[enc_node->getName()] = enc_node;
@@ -352,7 +353,8 @@ void encryption::xor_encryption(){
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
 					not_node->setName(enc_node->getName());
-					enc_node->setName(enc_node->getName() + std::to_string(i));
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
 					assert(name2node.find(enc_node->getName()) == name2node.end());
 					name2node[not_node->getName()] = not_node;
 					name2node[enc_node->getName()] = enc_node;
@@ -390,7 +392,8 @@ void encryption::xor_encryption(){
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
 					xnor_node->setName(enc_node->getName());
-					enc_node->setName(enc_node->getName() + std::to_string(i));
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
 					assert(name2node.find(enc_node->getName()) == name2node.end());
 					name2node[xnor_node->getName()] = xnor_node;
 					name2node[enc_node->getName()] = enc_node;
@@ -426,7 +429,8 @@ void encryption::xor_encryption(){
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
 					not_node->setName(enc_node->getName());
-					enc_node->setName(enc_node->getName() + std::to_string(i));
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
 					assert(name2node.find(enc_node->getName()) == name2node.end());
 					name2node[not_node->getName()] = not_node;
 					name2node[enc_node->getName()] = enc_node;
