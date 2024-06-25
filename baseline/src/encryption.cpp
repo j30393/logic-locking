@@ -530,7 +530,7 @@ void encryption::sl_brute_encryption() {
 bool encryption::check_brute_secure(NODE *a, NODE *b) {
 	std::unordered_set<NODE *> a_used_PI, b_used_PI, checked;
 	std::queue<NODE *> qu;
-	if(is_debug) std::cout << "We checking\n";
+	//if(is_debug) std::cout << "We checking\n";
 
 	qu.emplace(a);
 	while(!qu.empty()) {
@@ -568,7 +568,7 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 		}
 	}
 	
-	if(is_debug) std::cout << "Determine inputs complete\n";
+	//if(is_debug) std::cout << "Determine inputs complete\n";
 
 	// set to 2^20 times
 	unsigned int up_time = 10;
@@ -580,7 +580,7 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 	}
 
 	for(int i = 0; i < pow(2, std::min(unsigned(which_input.size()), up_time)); i++) {
-		if(is_debug) std::cout << i << " pair checking\n";
+		//if(is_debug) std::cout << i << " pair checking\n";
 		std::vector<bool> out, changed_out;
 		bool unchanged_a = 0, unchanged_b = 0;
 		for(int j = 0; j < which_input.size(); j++) {
