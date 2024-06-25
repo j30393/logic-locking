@@ -19,6 +19,7 @@
 #include <queue>
 #include <cassert>
 #include <cmath>
+#include <unordered_set>
 //#define bug
 
 
@@ -55,6 +56,9 @@ class encryption{
 				void		xor_encryption();
 				void 		sl_one_encryption();
 				void 		sl_compare_encryption();
+				void		sl_brute_encryption();
+				bool		check_brute_secure(NODE *, NODE *);
+				void		set_unknown(NODE *);
 		// fault base example num
 		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
 	private:

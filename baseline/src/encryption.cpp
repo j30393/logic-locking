@@ -384,6 +384,239 @@ void encryption::sl_compare_encryption() {
 		}
 	}
 }
+
+void encryption::sl_brute_encryption() {
+	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	assert(total_enc_num <= NODE_Ary.size());
+
+	if(is_debug){
+		std::cout << "encryption a total of " << total_enc_num << " nodes" << "\n";
+	}
+
+	std::vector<bool>key_arr (total_enc_num, false);
+	for(auto &&key_element : key_arr){
+		key_element = rand() % 2;
+		if(key_element == 0){
+			key += "0";
+		}
+		else{
+			key += "1";
+		}
+	}
+
+	if(is_debug){
+		std::cout << "encryption key_arr: ";
+		for(auto key_element: key_arr){
+			std::cout << key_element << " ";
+		}
+		std::cout << "\n";
+	}
+
+	//int stands for which way 0 is up, 1 is down, 2 is down then up. currently 0 and 2 dont have any difference
+	std::queue<std::pair<NODE *, int>> to_be_checked;
+	std::vector<NODE *> to_be_enc, clique;
+	std::unordered_set<NODE *> checked;
+	while(to_be_enc.size() < total_enc_num) {
+		if(is_debug) std::cout << to_be_enc.size() << " New Round\n";
+		if(to_be_checked.empty()) {
+			NODE *temp = initialize();
+			to_be_checked.emplace(temp, 0);
+			to_be_checked.emplace(temp, 1);
+			clique.clear();
+			checked.clear();
+		}
+
+		NODE *cur = to_be_checked.front().first, *drop_one = NULL;
+		int way = to_be_checked.front().second;
+		auto arr = (way == 1) ? cur->getFO() : cur->getFI();
+		to_be_checked.pop();
+
+		to_be_enc.emplace_back(cur);
+		clique.emplace_back(cur);
+		cur->setEncryption(1);
+
+		// To bypass not gates and buffers
+		//TODO: check if checking type is nessacrery by if PI fi size
+		while(arr.size() == 1 && arr[0]->getType() != Type::PI) {
+			drop_one = arr[0];
+			arr = (way == 1) ? drop_one->getFO() : drop_one->getFI();
+		}
+
+		if(drop_one != NULL) arr = {drop_one};
+
+		for(auto it: arr) {
+			if(is_debug) std::cout << it->getName() << "\n";
+			if(it->isEncryption() || checked.find(it) != checked.end()) continue;
+			checked.emplace(it);
+			//TODO: check if this is correct usage of theorem 1
+			bool secured = 1;
+			// if(way == 0) { //using theorem 1
+			// 	secured = 0;
+			// 	for(int i = 0; i < clique.size() && secured == 0; i++) {
+			// 		//TODO: make this function
+			// 		secured = check_brute_secure(cur, it);
+			// 	}
+			// }
+			for(int i = 0; i < clique.size() && secured == 1; i++) {
+				secured = check_brute_secure(cur, it);
+			}
+
+			if(secured) {
+				to_be_checked.emplace(it, way);
+				if(way == 1) to_be_checked.emplace(it, 2);
+			}
+		}
+	}
+
+	// add key gates
+	std::queue<NODE *> checker;
+	while(!checker.empty()) checker.pop();
+
+	for(int i = 0; i < total_enc_num; i++) {
+		assert(i < to_be_enc.size());
+		NODE *enc_node = to_be_enc[i];
+		NODE *key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+		NODE *xor_node = (key_arr[i] == 0) ? 
+							new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i)):
+							new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
+
+		KEY_Ary.push_back(key_node);
+		ENCY_Ary.push_back(xor_node);
+
+		// make sure its not output, because im too lazy to implement that
+		if(enc_node->getType() == Type::PO) {
+			//change encoded node
+			enc_node->setType(Type::Intl);
+			enc_node->insertFO(xor_node);
+			xor_node->setName(enc_node->getName());
+			enc_node->setName(enc_node->getName() + std::to_string(i));
+			*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
+
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			xor_node->setType(Type::PO);
+
+			// key node
+			key_node->insertFO(xor_node);
+		}
+		else {
+			// original encoded node change
+			for(auto fan_out_node : enc_node->getFO()){
+				checker.emplace(fan_out_node);
+			}
+			enc_node->clearFO();
+			enc_node->insertFO(xor_node);
+			enc_node->setEncNode(xor_node);
+
+			// key node
+			key_node->insertFO(xor_node);
+
+			// xor node & all other nodes
+			xor_node->insertFI(enc_node);
+			xor_node->insertFI(key_node);
+			while(!checker.empty()) {
+				NODE *temp = checker.front();
+				checker.pop();
+
+				temp->eraseFI(enc_node);
+				temp->insertFI(xor_node);
+				xor_node->insertFO(temp);
+			}
+		}
+	}
+}
+
+bool encryption::check_brute_secure(NODE *a, NODE *b) {
+	std::unordered_set<NODE *> used_PI, checked;
+	std::queue<NODE *> qu;
+
+	qu.emplace(a);
+	qu.emplace(b);
+	while(!qu.empty()) {
+		NODE *temp = qu.front();
+		qu.pop();
+		
+		if(checked.find(temp) != checked.end()) continue;
+		checked.emplace(temp);
+
+		for(auto it: temp->getFI()) {
+			qu.emplace(it);
+		}
+		if(temp->getType() == Type::PI && used_PI.find(temp) == used_PI.end()) used_PI.emplace(temp);
+	}
+	
+	//if(is_debug) std::cout << "Determine inputs complete\n";
+
+	std::vector<int> which_input;
+	for(auto it: used_PI) {
+		which_input.emplace_back(std::distance(NODE_Ary.begin(), std::find(NODE_Ary.begin(), NODE_Ary.end(), it)));
+	}
+
+	// set to 2^20 times
+	int up_time = 20;
+	for(auto n : NODE_Ary){
+		n->setCurrentOutput(2);
+	}
+	for(int i = 0; i < PI_Ary.size(); i++) {
+		PI_Ary[i]->setCurrentOutput(rand());
+	}
+
+	for(int i = 0; i < pow(2, used_PI.size()); i++) {
+		std::vector<bool> out, changed_out;
+		for(int j = 0; j < which_input.size(); j++) {
+			set_unknown(PI_Ary[which_input[j]]);
+			// brute force if less, rand if more
+			int temp = (used_PI.size() <= up_time) ? (i >> j) & 1 : rand();
+			PI_Ary[which_input[j]]->setCurrentOutput(temp);
+		}
+
+		for(auto it: PO_Ary) {
+			out.push_back(it->getCurrentOutput());
+		}
+
+		set_unknown(a);
+		a->setStuckFaultValue(1);
+		for(auto it: PO_Ary) {
+			changed_out.push_back(it->getCurrentOutput());
+		}
+		a->setStuckFaultValue(0);
+
+		if(out == changed_out) return 0;
+
+		changed_out.clear();
+
+		set_unknown(b);
+		set_unknown(a);
+		b->setStuckFaultValue(1);
+		for(auto it: PO_Ary) {
+			changed_out.push_back(it->getCurrentOutput());
+		}
+		b->setStuckFaultValue(0);
+
+		if(out == changed_out) return 0;
+	}
+
+	return 1;
+}
+
+void encryption::set_unknown(NODE *a) {
+	std::queue<NODE *> qu;
+	std::unordered_set<NODE *> checked;
+	qu.emplace(a);
+	while(!qu.empty()) {
+		NODE *temp = qu.front();
+		qu.pop();
+		if(checked.find(temp) != checked.end()) continue;
+		checked.emplace(temp);
+		temp->setCurrentOutput(2);
+		for(auto it: temp->getFO()) {
+			qu.emplace(it);
+		}
+	}
+}
+
+
 bool encryption::check_pairwise_secure(NODE *main, NODE *bef, bool way) {
 	bool ret = 1;
 

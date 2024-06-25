@@ -116,12 +116,13 @@ class NODE{
 		const	int 		getCO ()					{ return CO; 						} 
 				bool 		path3length(NODE*, int);
 		// 109062233 add for stuck at fault 
-		const	int			getCurrentOutput()			{ return current_output;			}
+		const	int			getCurrentOutput()			{ return calculateValue();			}
 				void		setCurrentOutput(int _b)	{ current_output = _b;				}
-				void		setStuckFaultValue(bool _b)	{ stuck_fault_value = _b;			}
+				void		setStuckFaultValue(bool _b)	{ stuck_fault_value = _b;			} //using this for flipping gate value
 		const	bool		getStuckFaultValue()		{ return stuck_fault_value;			}
 		const	bool		is_StuckFaulting()			{ return is_stuck_faulting;			}
 				void		setStuckFaulting(bool _b)	{ is_stuck_faulting = _b;			}
+				bool		calculateValue();
 				// 109062233 add for stuck at fault
 		int					NoP0; // detect the stuck at 0 fault
 		int					NoO0; // affect bits for stuck at 0 fault	

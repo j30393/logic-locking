@@ -13,8 +13,9 @@ int main(int argc, char* argv[]){
 	enc->key_ratio = 1; // ratio of number of key bits
 	//enc->xor_encryption();
 	enc->setDebugMode(1);
-	//enc->sl_one_encryption();
-	enc->sl_compare_encryption();
+	enc->sl_one_encryption();
+	//enc->sl_compare_encryption();
+	//enc->sl_brute_encryption();
 	enc->outputfile();
 	return 0;
 }

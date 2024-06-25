@@ -105,3 +105,111 @@ bool NODE::path3length(NODE * _node, int _count){
 	}
 }
 
+
+bool NODE::calculateValue() {
+	if(current_output == 0 || current_output == 1) return current_output;
+	if(t == Type::PI) {
+		current_output = rand();
+		return current_output;
+	}
+	bool ans;
+	FType cur = ft;
+	if(stuck_fault_value) {
+		switch(ft) {
+			case(FType::AND):{
+				cur = FType::NAND;
+				break;
+			}
+			case(FType::OR):{
+				cur = FType::NOR;
+				break;
+			}
+			case(FType::NAND):{
+				cur = FType::AND;
+				break;
+			}
+			case(FType::NOR):{
+				cur = FType::OR;
+				break;
+			}
+			case(FType::XOR):{
+				cur = FType::XNOR;
+				break;
+			}
+			case(FType::XNOR):{
+				cur = FType::XOR;
+				break;
+			}
+			case(FType::NOT):{
+				cur = FType::BUF;
+				break;
+			}
+			case(FType::BUF):{
+				cur = FType::NOT;
+				break;
+			}
+			default:{
+				std::cout << "error: unexpected type switch in node.cpp\n";
+			}
+		}
+	}
+
+	switch(cur){
+		case(FType::AND):{
+			ans = 1;
+			for(auto p : FI_Ary){
+				ans = ans & p->getCurrentOutput();
+			}
+			break;
+		}
+		case(FType::OR):{
+			ans = 0;
+			for(auto p : FI_Ary){
+				ans = ans | p->getCurrentOutput();
+			}
+			break;
+		}
+		case(FType::NAND):{
+			ans = 1;
+			for(auto p : FI_Ary){
+				ans = ans & p->getCurrentOutput();
+			}
+			ans = !ans;
+			break;
+		}
+		case(FType::NOR):{
+			ans = 0;
+			for(auto p : FI_Ary){
+				ans = ans | p->getCurrentOutput();
+			}
+			ans = !ans;
+			break;
+		}
+		case(FType::XOR):{
+			ans = 0;
+			for(auto p : FI_Ary){
+				ans = ans ^ p->getCurrentOutput();
+			}
+			break;
+		}
+		case(FType::XNOR):{
+			ans = 0;
+			for(auto p : FI_Ary){
+				ans = ans ^ p->getCurrentOutput();
+			}
+			ans = !ans;
+			break;
+		}
+		case(FType::NOT):{
+			ans = !FI_Ary[0]->getCurrentOutput();
+			break;
+		}
+		case(FType::BUF):{
+			ans = FI_Ary[0]->getCurrentOutput();
+			break;
+		}
+		default:{
+			std::cout << "error: unexpected type in node.cpp\n";
+		}
+	}
+}
