@@ -258,6 +258,7 @@ void encryption::fault_impact_cal(){
 
 void encryption::sl_one_encryption() {
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size()), output_find = 0;
+	//total_enc_num = 128;
 	assert(total_enc_num <= NODE_Ary.size());
 
 	if(is_debug){
@@ -265,6 +266,12 @@ void encryption::sl_one_encryption() {
 	}
 
 	std::vector<bool>key_arr (total_enc_num, false);
+
+	// key = "01001000110010101000110000101011010110101110001111100001011010110101010111011100000100001101000011110111010001001111111110010011";
+	// for(int i = 0; i < total_enc_num; i++) {
+	// 	key_arr[i] = key[i] - '0';
+	// }
+
 	for(auto &&key_element : key_arr){
 		key_element = rand() % 2;
 		if(key_element == 0){
@@ -274,6 +281,7 @@ void encryption::sl_one_encryption() {
 			key += "1";
 		}
 	}
+
 
 	if(is_debug){
 		std::cout << "encryption key_arr: ";
