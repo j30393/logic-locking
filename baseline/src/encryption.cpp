@@ -417,7 +417,7 @@ void encryption::sl_brute_encryption() {
 	std::vector<NODE *> to_be_enc, clique;
 	std::unordered_set<NODE *> checked;
 	while(to_be_enc.size() < total_enc_num) {
-		if(is_debug) std::cout << to_be_enc.size() << " New Round\n";
+		if(is_debug) std::cout << to_be_enc.size() << " keys\n";
 		if(to_be_checked.empty()) {
 			NODE *temp = initialize();
 			to_be_checked.emplace(temp, 0);
@@ -528,11 +528,11 @@ void encryption::sl_brute_encryption() {
 }
 
 bool encryption::check_brute_secure(NODE *a, NODE *b) {
-	std::unordered_set<NODE *> used_PI, checked;
+	std::unordered_set<NODE *> a_used_PI, b_used_PI, checked;
 	std::queue<NODE *> qu;
+	if(is_debug) std::cout << "We checking\n";
 
 	qu.emplace(a);
-	qu.emplace(b);
 	while(!qu.empty()) {
 		NODE *temp = qu.front();
 		qu.pop();
@@ -543,31 +543,50 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 		for(auto it: temp->getFI()) {
 			qu.emplace(it);
 		}
-		if(temp->getType() == Type::PI && used_PI.find(temp) == used_PI.end()) used_PI.emplace(temp);
+		if(temp->getType() == Type::PI && a_used_PI.find(temp) == a_used_PI.end()) a_used_PI.emplace(temp);
 	}
-	
-	//if(is_debug) std::cout << "Determine inputs complete\n";
+
+	qu.emplace(b);
+	checked.clear();
+	while(!qu.empty()) {
+		NODE *temp = qu.front();
+		qu.pop();
+		
+		if(checked.find(temp) != checked.end()) continue;
+		checked.emplace(temp);
+
+		for(auto it: temp->getFI()) {
+			qu.emplace(it);
+		}
+		if(temp->getType() == Type::PI && b_used_PI.find(temp) == b_used_PI.end()) b_used_PI.emplace(temp);
+	}
 
 	std::vector<int> which_input;
-	for(auto it: used_PI) {
-		which_input.emplace_back(std::distance(NODE_Ary.begin(), std::find(NODE_Ary.begin(), NODE_Ary.end(), it)));
+	for(int i = 0; i < PI_Ary.size(); i++) {
+		if((a_used_PI.find(PI_Ary[i]) == a_used_PI.end()) || (b_used_PI.find(PI_Ary[i]) == b_used_PI.end())) {
+			which_input.emplace_back(i);
+		}
 	}
+	
+	if(is_debug) std::cout << "Determine inputs complete\n";
 
 	// set to 2^20 times
-	int up_time = 20;
+	unsigned int up_time = 10;
 	for(auto n : NODE_Ary){
 		n->setCurrentOutput(2);
 	}
 	for(int i = 0; i < PI_Ary.size(); i++) {
-		PI_Ary[i]->setCurrentOutput(rand());
+		PI_Ary[i]->setCurrentOutput(rand() % 2);
 	}
 
-	for(int i = 0; i < pow(2, used_PI.size()); i++) {
+	for(int i = 0; i < pow(2, std::min(unsigned(which_input.size()), up_time)); i++) {
+		if(is_debug) std::cout << i << " pair checking\n";
 		std::vector<bool> out, changed_out;
+		bool unchanged_a = 0, unchanged_b = 0;
 		for(int j = 0; j < which_input.size(); j++) {
 			set_unknown(PI_Ary[which_input[j]]);
 			// brute force if less, rand if more
-			int temp = (used_PI.size() <= up_time) ? (i >> j) & 1 : rand();
+			int temp = (which_input.size() <= up_time) ? (i >> j) & 1 : (rand() % 2);
 			PI_Ary[which_input[j]]->setCurrentOutput(temp);
 		}
 
@@ -582,7 +601,7 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 		}
 		a->setStuckFaultValue(0);
 
-		if(out == changed_out) return 0;
+		if(out == changed_out) unchanged_a = 1;
 
 		changed_out.clear();
 
@@ -594,7 +613,9 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 		}
 		b->setStuckFaultValue(0);
 
-		if(out == changed_out) return 0;
+		if(out == changed_out) unchanged_b = 1;
+
+		if(unchanged_a ^ unchanged_b) return 0;
 	}
 
 	return 1;

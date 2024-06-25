@@ -109,7 +109,7 @@ bool NODE::path3length(NODE * _node, int _count){
 bool NODE::calculateValue() {
 	if(current_output == 0 || current_output == 1) return current_output;
 	if(t == Type::PI) {
-		current_output = rand();
+		current_output = rand() % 2;
 		return current_output;
 	}
 	bool ans;
