@@ -5,5 +5,12 @@
 4. Run "./lcmp  ./benchmark/c17.bench  test.bench  key=???" to lunch the equivariance checking
 ![balabala](./source/image.png)
 
+## How to use the bash 
+1. put the `run_benchmark.sh` in baseline 
+2. Run `source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc`
+3. In the workstation, please make sure that the format is in linux form.
+4. `bash run_benchmark.sh`
+![alt text](./source/profiling.png)
+
 ## template from 
 This template is from https://github.com/Ohpaipai/Homework/tree/main

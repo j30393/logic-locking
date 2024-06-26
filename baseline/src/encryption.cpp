@@ -26,9 +26,16 @@ encryption::~encryption(){
 	NODE_Ary.clear();
 	PI_Ary.clear();
 	PO_Ary.clear();
+	for(auto p : KEY_Ary ){
+		delete p;
+	}
 	KEY_Ary.clear();
 	name2node.clear();
 	key="";
+	for(auto p : ENCY_Ary ){
+		delete p;
+	}
+	ENCY_Ary.clear();
 }
 
 // 109062233 add graph traverse 
@@ -200,7 +207,7 @@ void encryption::fault_impact_cal(){
 			n->setStuckFaulting(true);
 			n->setStuckFaultValue(0);
 			sa0_output = solver(test_pattern);
-			std::pair<int,int> result = compareAndHammingDistance(golden_output, sa0_output);
+			std::pair<bool,int> result = compareAndHammingDistance(golden_output, sa0_output);
 			if(!result.first){ // difference
 				n->NoO0 ++ ;
 				n->NoP0 += result.second;
@@ -825,11 +832,15 @@ void encryption::erasePO(NODE *_node) {
 // xor encryption 
 void encryption::xor_encryption(){
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	total_enc_num = std::min(total_enc_num, static_cast<int>(NODE_Ary.size()));
 	assert(total_enc_num <= NODE_Ary.size());
+	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
+	total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
+	assert(total_enc_num > 0);
+	this->total_key_num = total_enc_num;
 	if(is_debug){
 		std::cout << "encryption a total of " << total_enc_num << " nodes" << std::endl;
 	}
-	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
 	std::vector<bool>key_arr (total_enc_num, false);
 	for(auto &&key_element : key_arr){
 		key_element = rand() % 2;
@@ -851,14 +862,16 @@ void encryption::xor_encryption(){
 	// If the key-bit is ‘0’, then the key-gate
 	// structure can be either ‘XOR- gate’ or ‘ XNOR- gate + inverter ’. 
 	// Similarly, if the key-bit is ‘1’, then the key-gate
-	// structure can be either ‘XNOR-gate’ or ‘ NOR- gate + inverter ’.
+	// structure can be either ‘XNOR-gate’ or ‘ XOR- gate + inverter ’.
 
 	for(int i = 0; i < total_enc_num; i++){
 		NODE* enc_node = enc_nodes[i];
 		if(key_arr[i] == 0){
 			// XOR gate
 			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+			assert(name2node.find(key_node->getName()) == name2node.end());
 			KEY_Ary.push_back(key_node);
+			name2node[key_node->getName()] = key_node;
 			int type = rand() % 2;
 			if(type == 1){
 				// xor gate
@@ -870,46 +883,75 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(xor_node);
+					xor_node->setName(enc_node->getName());
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
+					assert(name2node.find(enc_node->getName()) == name2node.end());
+					name2node[xor_node->getName()] = xor_node;
+					name2node[enc_node->getName()] = enc_node;
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 				}
 				else{ // none output node
+					assert(name2node.find(xor_node->getName()) == name2node.end());
+					name2node[xor_node->getName()] = xor_node;
 					for(auto fan_out_node : enc_node->getFO()){
 						fan_out_node->insertFI(xor_node);
 						fan_out_node->eraseFI(enc_node);
+						xor_node->insertFO(fan_out_node);
 					}
+					enc_node->clearFO();
 				}
+				enc_node->insertFO(xor_node);
+				key_node->insertFO(xor_node);
 			}
 			else{
 				// xnor gate + not
 				NODE* xnor_node = new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
+				assert(name2node.find(xnor_node->getName()) == name2node.end());
+				name2node[xnor_node->getName()] = xnor_node;
 				ENCY_Ary.push_back(xnor_node);
 				xnor_node->insertFI(enc_node);
 				xnor_node->insertFI(key_node);
 				NODE* not_node = new NODE(Type::Intl, FType::NOT, "not" + std::to_string(i));
 				ENCY_Ary.push_back(not_node);
 				not_node->insertFI(xnor_node);
+				xnor_node->insertFO(not_node);
 				enc_node->setEncNode(not_node);
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(not_node);
+					not_node->setName(enc_node->getName());
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
+					assert(name2node.find(enc_node->getName()) == name2node.end());
+					name2node[not_node->getName()] = not_node;
+					name2node[enc_node->getName()] = enc_node;
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
 				}
 				else{ // none output node
+					assert(name2node.find(not_node->getName()) == name2node.end());
+					name2node[not_node->getName()] = not_node;
 					for(auto fan_out_node : enc_node->getFO()){
 						fan_out_node->insertFI(not_node);
 						fan_out_node->eraseFI(enc_node);
+						not_node->insertFO(fan_out_node);
 					}
+					enc_node->clearFO();
 				}
+				enc_node->insertFO(xnor_node);
+				key_node->insertFO(xnor_node);
 			}
 		}
 		else{
 			// XNOR gate
 			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(i));
+			assert(name2node.find(key_node->getName()) == name2node.end());
 			KEY_Ary.push_back(key_node);
+			name2node[key_node->getName()] = key_node;
 			int type = rand() % 2;
 			if(type == 1){
 				// xnor gate
-				NODE* xnor_node = new NODE(Type::Intl, FType::XNOR, "xor" + std::to_string(i));
+				NODE* xnor_node = new NODE(Type::Intl, FType::XNOR, "xnor" + std::to_string(i));
 				ENCY_Ary.push_back(xnor_node);
 				xnor_node->insertFI(enc_node);
 				xnor_node->insertFI(key_node);
@@ -917,36 +959,63 @@ void encryption::xor_encryption(){
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(xnor_node);
+					xnor_node->setName(enc_node->getName());
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
+					assert(name2node.find(enc_node->getName()) == name2node.end());
+					name2node[xnor_node->getName()] = xnor_node;
+					name2node[enc_node->getName()] = enc_node;
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xnor_node;
 				}
 				else{ // none output node
+					assert(name2node.find(xnor_node->getName()) == name2node.end());
+					name2node[xnor_node->getName()] = xnor_node;
 					for(auto fan_out_node : enc_node->getFO()){
 						fan_out_node->insertFI(xnor_node);
 						fan_out_node->eraseFI(enc_node);
+						xnor_node->insertFO(fan_out_node);
 					}
+					enc_node->clearFO();
 				}
+				enc_node->insertFO(xnor_node);
+				key_node->insertFO(xnor_node);
 			}
 			else{
 				// xor gate + not
-				NODE* xor_node = new NODE(Type::Intl, FType::XOR, "xnor" + std::to_string(i));
+				NODE* xor_node = new NODE(Type::Intl, FType::XOR, "xor" + std::to_string(i));
+				assert(name2node.find(xor_node->getName()) == name2node.end());
+				name2node[xor_node->getName()] = xor_node;
 				ENCY_Ary.push_back(xor_node);
 				xor_node->insertFI(enc_node);
 				xor_node->insertFI(key_node);
 				NODE* not_node = new NODE(Type::Intl, FType::NOT, "not" + std::to_string(i));
 				ENCY_Ary.push_back(not_node);
 				not_node->insertFI(xor_node);
+				xor_node->insertFO(not_node);
 				enc_node->setEncNode(not_node);
 				enc_node->setEncryption(true);
 				// if we are operating on the output node
 				if(enc_node->getFO().size() == 0){
-					PO_Ary.push_back(not_node);
+					not_node->setName(enc_node->getName());
+					// ptw = plaintext wire
+					enc_node->setName(enc_node->getName() + "$ptw");
+					assert(name2node.find(enc_node->getName()) == name2node.end());
+					name2node[not_node->getName()] = not_node;
+					name2node[enc_node->getName()] = enc_node;
+					*std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
 				}
 				else{ // none output node
+					assert(name2node.find(not_node->getName()) == name2node.end());
+					name2node[not_node->getName()] = not_node;
 					for(auto fan_out_node : enc_node->getFO()){
 						fan_out_node->insertFI(not_node);
 						fan_out_node->eraseFI(enc_node);
+						not_node->insertFO(fan_out_node);
 					}
+					enc_node->clearFO();
 				}
+				enc_node->insertFO(xor_node);
+				key_node->insertFO(xor_node);
 			}
 		}
 	}
@@ -966,15 +1035,15 @@ void encryption::readfile(std::string _filename){
 	
 	std::string buffer;
 
-	int coun = 0;
+	int count = 0;
 	while(std::getline(input, buffer)){
 		std::string checkerflag = "";
 		checkerflag.assign(buffer, 0, 2);
-		//annotation
-		if(buffer[0]=='#')
-			continue;
 		if(buffer.empty()){
-		//	std::cout<<"empty\n";
+			continue;
+		}
+		//annotation
+		if(buffer[0]=='#'){
 			continue;
 		}
 		if(checkerflag == "IN"){ // input 
@@ -988,7 +1057,7 @@ void encryption::readfile(std::string _filename){
 			auto it = name2node.find(name);
 			if(it == name2node.end() ){
 				n =new NODE(t, ft, name);
-				n->setId(coun++); //set ID	
+				n->setId(count++); //set ID	
 				n->setDepth(0); //set depth
 				NODE_Ary.push_back(n);
 				name2node[name] = n; 
@@ -1000,8 +1069,6 @@ void encryption::readfile(std::string _filename){
 			}
 			//Input push in
 			PI_Ary.push_back(n);
-
-
 		}
 		else if(checkerflag == "OU"){
 			std::string name = "";
@@ -1015,13 +1082,12 @@ void encryption::readfile(std::string _filename){
 			auto it = name2node.find(name);
 			if(it == name2node.end() ){
 				n =new NODE(t, ft, name);
-				n->setId(coun++); //set ID	
+				n->setId(count++); //set ID	
 				NODE_Ary.push_back(n);
 				name2node[name] = n; 
 			}
 			else{
-					n = it->second;
-					//n->setFtype(ft);
+				n = it->second;
 				if(it->second->getType() != Type::PI)
 					n->setType(t);
 
@@ -1041,117 +1107,68 @@ void encryption::readfile(std::string _filename){
 			std::string name = "";
 			ss >> name;
 			// = kill
-			ss >> tem_buf;
-			tem_buf.clear();
+			ss >> tem_buf >> std::ws;
 			
 
 			//get Ftype
-			ss >> tem_buf;
 			std::string ft_name = "";
-			ft_name.assign(tem_buf, 0, 3);
+			std::getline(ss, ft_name, '(');
+			ss >> tem_buf;
 
 			std::transform(ft_name.begin(), ft_name.end(), ft_name.begin(), tolower);
 			if(ft_name == "not"){
 				ft = FType::NOT;
-				tem_buf.assign(tem_buf, 4, tem_buf.size() - 4 );
 			}
 			else if(ft_name == "buf"){
 				ft = FType::BUF;
-				tem_buf.assign(tem_buf, 4, tem_buf.size() - 4 );
 			}
 			else if(ft_name == "and"){
 				ft = FType::AND;
-				tem_buf.assign(tem_buf, 4, tem_buf.size() - 4 );
 			}
 			else if(ft_name == "xor"){
 				ft = FType::XOR;
-				tem_buf.assign(tem_buf, 4, tem_buf.size() - 4 );
 			}
-			else if(ft_name == "xno"){
+			else if(ft_name == "xnor"){
 				ft = FType::XNOR;
-				tem_buf.assign(tem_buf, 5, tem_buf.size() - 5 );
 			}
-			else if(ft_name == "nan"){
+			else if(ft_name == "nand"){
 				ft = FType::NAND;
-				tem_buf.assign(tem_buf, 5, tem_buf.size() - 5 );
 			}
 			else if(ft_name == "nor"){
 				ft = FType::NOR;
-				tem_buf.assign(tem_buf, 4, tem_buf.size() - 4 );
 			}
-			else if(ft_name == "or("){
+			else if(ft_name == "or"){
 				ft = FType::OR;
-				tem_buf.assign(tem_buf, 3, tem_buf.size() - 3 );
 			}
 			else{
 				continue;
 			}
 
-			//creat node & push
+			//create node & push
 			auto it = name2node.find(name);
 			NODE *n;
 			if(it == name2node.end() ){
 				n =new NODE(t, ft, name);
-				n->setId(coun++); //set ID	
+				n->setId(count++); //set ID	
 				NODE_Ary.push_back(n);
 				name2node[name] = n; 
 			}
 			else{
 				n = it->second;
 			//	std::cout<<n->getName()<<std::endl;
+				assert(n->getFtype() == FType::BUF);
 				n->setFtype(ft);
 			}
 
-			//erase unuse char
-			if(tem_buf[0] == '(')
-				tem_buf.erase(tem_buf.begin());
-			if(tem_buf[0] == ',')
-				tem_buf.erase(tem_buf.begin());
-			if(tem_buf[tem_buf.size()-1] == ',')
-				tem_buf.pop_back();
-			if(tem_buf[tem_buf.size()-1] == ')')
-				tem_buf.pop_back();
-		
-			//std::cout<<"insert node ( "<<name<<" ) = ";
-			//std::cout<<tem_buf<<" ";
-			
-
-			it = name2node.find(tem_buf);
-			if(it == name2node.end() ){
-				NODE *tem_n;
-				tem_n =new NODE(t, FType::BUF, tem_buf);
-				tem_n->setId(coun++); //set ID	
-				NODE_Ary.push_back(tem_n);
-				name2node[tem_buf] = tem_n; 
-				//fan out
-				tem_n->insertFO(n);
-				//fan in
-				n->insertFI(tem_n);
-			}
-			else{
-				NODE *tem_n;
-				tem_n = it->second;
-				//fan out
-				tem_n->insertFO(n);
-				//fan in
-				n->insertFI(tem_n);
-			}
-
-			
-			//delete [] tem_n;
-
-			//clear
-			tem_buf.clear();
-			tem_buf="";
-
-			while(ss >> tem_buf){
+			do{
+				//erase unused char
 				if(tem_buf[0] == '(')
 					tem_buf.erase(tem_buf.begin());
 				if(tem_buf[0] == ',')
 					tem_buf.erase(tem_buf.begin());
-				if(tem_buf[tem_buf.size()-1] == ',')
-					tem_buf.pop_back();
 				if(tem_buf[tem_buf.size()-1] == ')')
+					tem_buf.pop_back();
+				if(tem_buf[tem_buf.size()-1] == ',')
 					tem_buf.pop_back();
 			
 			//	std::cout<<tem_buf<<" ";
@@ -1159,23 +1176,21 @@ void encryption::readfile(std::string _filename){
 				it = name2node.find(tem_buf);
 				if(it == name2node.end() ){
 					tem_n =new NODE(t, FType::BUF, tem_buf);
-					tem_n->setId(coun++); //set ID	
+					tem_n->setId(count++); //set ID	
 					NODE_Ary.push_back(tem_n);
 					name2node[tem_buf] = tem_n; 
 				}
 				else{
 					tem_n = it->second;
 				}
-				//fan ou
+				//fan out
 				tem_n->insertFO(n);
 				//fan in
 				n->insertFI(tem_n);
-			//	delete [] tem_n;
-			}
+			}while(ss >> tem_buf);
 
 			//std::cout<<std::endl;
 		}
-		buffer.clear();
 	}
 	input.close();
 	//std::cout<<constraint<<std::endl;
@@ -1190,13 +1205,13 @@ std::ostream& operator<<(std::ostream& os, NODE* p){
 	os<<"ID: "<<p->getId()<<std::endl;
 	os<<"And Count: "<<p->getAndC()<<std::endl;
 	os<<"Or Count: "<<p->getOrC()<<std::endl;
-	os<<"FI node : ";
+	os<<"FI node :";
 	for(auto q :p->getFI()){
-		os<<q->getName()<<" ";
+		os<<" "<<q->getName();
 	}
-	os<<"\nFO node : ";
+	os<<"\nFO node :";
 	for(auto q :p->getFO()){
-		os<<q->getName()<<" ";
+		os<<" "<<q->getName();
 	}
 	os << "\ndepth "  << p->getDepth()<<std::endl ; 
 
@@ -1236,7 +1251,7 @@ void encryption::topological_sort(){
 
 	std::vector<NODE*> result;
 
-    while (!q.empty()) {
+    while(!q.empty()) {
         NODE* node = q.front();
         q.pop();
 		if(node->getDepth() == -0xfffffff){
@@ -1294,10 +1309,6 @@ void encryption::outputfile(){
 		fname += "ENC.bench";
 	}
 	out.open(fname, std::ios::out);
-	
-/*	if(out.is_open()){
-		std::cout<<"out open\n";
-	}*/
 
 	out<<"# key="<<key<<std::endl;
 	//INPUT
@@ -1340,7 +1351,7 @@ void encryption::outputfile(){
 					tem += ")";
 				}
 				else
-					tem += ",";
+					tem += ", ";
 			}
 			out<<tem<<std::endl;
 		}
@@ -1359,7 +1370,7 @@ void encryption::outputfile(){
 				tem += ")";
 			}
 			else
-				tem += ",";
+				tem += ", ";
 		}
 		out<<tem<<std::endl;
 	}

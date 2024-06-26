@@ -1,5 +1,5 @@
 CC=g++
-LDFLAGS=-std=c++11 -lm -g
+LDFLAGS=-std=c++11 -lm -O2
 SOURCES=./src/node.cpp ./src/encryption.cpp ./src/main.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=logic_lock
@@ -14,4 +14,4 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf *.o $(EXECUTABLE)
+	rm -rf $(OBJECTS) $(EXECUTABLE)
