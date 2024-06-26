@@ -270,6 +270,7 @@ void encryption::xor_encryption(){
 	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
 	total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
 	assert(total_enc_num > 0);
+	this->total_key_num = total_enc_num;
 	if(is_debug){
 		std::cout << "encryption a total of " << total_enc_num << " nodes" << std::endl;
 	}
@@ -453,6 +454,68 @@ void encryption::xor_encryption(){
 	}
 }
 
+// add the final masking step
+void encryption::masking(){
+	// with type nand, nor, not , and, or in testbenchs 
+	int current_key_counter = this->total_key_num - 1;
+	assert(current_key_counter >= 0); // should at least insert a key before
+	for(auto node: PO_Ary){ // masking the output node
+		if(!node->isEncryption()){
+			node->setEncryption(true);
+			current_key_counter++;
+			NODE* key_node = new NODE(Type::PI, FType::BUF, "keyinput" + std::to_string(current_key_counter));
+			assert(name2node.find(key_node->getName()) == name2node.end());
+			KEY_Ary.push_back(key_node);
+			name2node[key_node->getName()] = key_node;
+			//std::cout << "node -> " << node->getFOlen() << " is not encrypted"<< std::endl;
+			switch(node->getFtype()){
+				case(FType::AND):{
+					key += "1";
+					node->insertFI(key_node);
+					key_node->insertFO(node);
+					break;
+				}
+				case(FType::OR):{
+					key += "0";
+					node->insertFI(key_node);
+					key_node->insertFO(node);
+					break;
+				}
+				case(FType::NAND):{
+					key += "1";
+					node->insertFI(key_node);
+					key_node->insertFO(node);
+					break;
+				}
+				case(FType::NOR):{
+					key += "0";
+					node->insertFI(key_node);
+					key_node->insertFO(node);
+					break;
+				}
+				case(FType::NOT):{
+					// determine which output should we use
+					// not -> nxor (0, original input) or xor(1, original input)
+					node->insertFI(key_node);
+					key_node->insertFO(node); 
+					if(static_cast<int>(node->NoO0 * node->NoP0) > static_cast<int>(node->NoO1 * node->NoP1)){
+						key += "0";
+						node->setFtype(FType::XNOR);
+					}
+					else{
+						key += "1";
+						node->setFtype(FType::XOR);
+					}
+					break;
+				}
+				default:{
+					std::cout << "error: unexpected type" << std::endl;
+				}
+			}
+		}
+	}
+}
+
 
 void encryption::setOutputname(std::string _name){
 	twolevelfile = true;
@@ -475,8 +538,9 @@ void encryption::readfile(std::string _filename){
 			continue;
 		}
 		//annotation
-		if(buffer[0]=='#')
+		if(buffer[0]=='#'){
 			continue;
+		}
 		if(checkerflag == "IN"){ // input 
 			std::string name = "";
 			name.assign(buffer, 6, buffer.size()-7);
@@ -500,8 +564,6 @@ void encryption::readfile(std::string _filename){
 			}
 			//Input push in
 			PI_Ary.push_back(n);
-
-
 		}
 		else if(checkerflag == "OU"){
 			std::string name = "";
@@ -684,7 +746,7 @@ void encryption::topological_sort(){
 
 	std::vector<NODE*> result;
 
-    while (!q.empty()) {
+    while(!q.empty()) {
         NODE* node = q.front();
         q.pop();
 		if(node->getDepth() == -0xfffffff){

@@ -51,6 +51,8 @@ class encryption{
 				void		xor_encryption();
 		// fault base example num
 		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
+				void		masking();
+		int total_key_num;
 	private:
 		std::vector<NODE*>				NODE_Ary;
 		std::vector<NODE*>				PI_Ary;
