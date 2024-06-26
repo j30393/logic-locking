@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "running profiling"
 # Source the environment file
-source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc
+# source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc
 make clean
 make
 # Define the target benchmarks
@@ -66,7 +66,7 @@ for target in "${targets[@]}"; do
     
     # Calculate profiling result
     alpha=1 # not for sure the alpha & beta
-    beta=1
+    beta=100000
     profiling_result=$(echo "scale=10; $alpha * $cube_count / ($gates * $keys) + $beta * $cpu_time / ($gates * $keys)" | bc -l)
 
     # Output the profiling result

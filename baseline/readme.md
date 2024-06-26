@@ -7,8 +7,9 @@
 
 ## How to use the bash 
 1. put the `run_benchmark.sh` in baseline 
-2. In the workstation, please make sure that the format is in linux form.
-3. `bash run_benchmark.sh`
+2. Run `source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc`
+3. In the workstation, please make sure that the format is in linux form.
+4. `bash run_benchmark.sh`
 ![alt text](./source/profiling.png)
 
 ## template from 
