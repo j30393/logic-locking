@@ -435,6 +435,8 @@ void encryption::sl_brute_encryption() {
 		clique.emplace_back(cur);
 		cur->setEncryption(1);
 
+		if(to_be_checked.size() + to_be_enc.size() >= total_enc_num) continue;
+
 		// To bypass not gates and buffers
 		//TODO: check if checking type is nessacrery by if PI fi size
 		while(arr.size() == 1 && arr[0]->getType() != Type::PI) {
@@ -527,6 +529,10 @@ void encryption::sl_brute_encryption() {
 	}
 }
 
+int encryption::Rand(int n) {
+	return rand() % n;
+}
+
 bool encryption::check_brute_secure(NODE *a, NODE *b) {
 	std::unordered_set<NODE *> a_used_PI, b_used_PI, checked;
 	std::queue<NODE *> qu;
@@ -583,7 +589,11 @@ bool encryption::check_brute_secure(NODE *a, NODE *b) {
 		//if(is_debug) std::cout << i << " pair checking\n";
 		std::vector<bool> out, changed_out;
 		bool unchanged_a = 0, unchanged_b = 0;
-		for(int j = 0; j < which_input.size(); j++) {
+
+		if(which_input.size() > up_time) {
+			std::random_shuffle(which_input.begin(), which_input.end());
+		}
+		for(int j = 0; j < std::min(unsigned(which_input.size()),up_time); j++) {
 			set_unknown(PI_Ary[which_input[j]]);
 			// brute force if less, rand if more
 			int temp = (which_input.size() <= up_time) ? (i >> j) & 1 : (rand() % 2);

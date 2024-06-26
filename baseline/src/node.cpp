@@ -212,4 +212,6 @@ bool NODE::calculateValue() {
 			std::cout << "error: unexpected type in node.cpp\n";
 		}
 	}
+
+	return current_output = ans;
 }

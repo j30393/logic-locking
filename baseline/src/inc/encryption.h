@@ -59,6 +59,7 @@ class encryption{
 				void		sl_brute_encryption();
 				bool		check_brute_secure(NODE *, NODE *);
 				void		set_unknown(NODE *);
+				int			Rand(int);
 		// fault base example num
 		std::vector<bool>	solver(std::vector<bool>);			// generate the output from the given input 
 	private:
