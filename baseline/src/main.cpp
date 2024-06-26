@@ -1,7 +1,7 @@
 #include "./inc/node.h"
 #include "./inc/encryption.h"
 int main(int argc, char* argv[]){
-	std::srand(static_cast<unsigned>(5678));
+	std::srand((unsigned) time(NULL));
 	encryption* enc = new encryption();
 	if(argc == 3)
 		enc->setOutputname(argv[2]);
