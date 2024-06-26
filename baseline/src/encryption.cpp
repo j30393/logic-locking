@@ -387,6 +387,7 @@ void encryption::sl_compare_encryption() {
 
 void encryption::sl_brute_encryption() {
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	total_enc_num = 128;
 	assert(total_enc_num <= NODE_Ary.size());
 
 	if(is_debug){
