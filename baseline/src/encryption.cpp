@@ -266,6 +266,7 @@ void encryption::fault_impact_cal(){
 // xor encryption 
 void encryption::xor_encryption(){
 	int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
+	total_enc_num = std::min(total_enc_num, static_cast<int>(NODE_Ary.size()));
 	assert(total_enc_num <= NODE_Ary.size());
 	std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
 	total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
