@@ -118,3 +118,8 @@ void NODE::eraseFO(NODE* _node)
 {
     FO_Ary.erase(FO_Ary.begin() + FOfind(_node));
 }
+
+const int NODE::getGateDelay(){
+    if (t == Type::PRIMARY_INPUT) return 0;
+    return 1;
+}

@@ -26,11 +26,6 @@ public:
     void fault_impact_cal();
     float key_ratio;
     void xor_encryption();
-    // fault base example num
-    std::vector<bool> solver(std::vector<bool>); // generate the output from the given input
-    void masking();
-    // fault base example num
-    int test_num;
     int total_key_num;
 
 private:

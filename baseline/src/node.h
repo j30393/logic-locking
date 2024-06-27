@@ -39,12 +39,8 @@ public:
         , name("")
         , id(0)
         , depth(-0xfffffff)
-        , is_stuck_faulting(false)
-        , fault_impact(0)
-        , NoO0(0)
-        , NoP0(0)
-        , NoO1(0)
-        , NoP1(0)
+        , AT(-0xfffffff)
+        , RAT(-0xfffffff)
     {
     }
 
@@ -55,12 +51,8 @@ public:
         , id(0)
         , enc(false)
         , depth(-0xfffffff)
-        , is_stuck_faulting(false)
-        , fault_impact(0)
-        , NoO0(0)
-        , NoP0(0)
-        , NoO1(0)
-        , NoP1(0)
+        , AT(-0xfffffff)
+        , RAT(-0xfffffff)
     {
     }
 
@@ -93,16 +85,9 @@ public:
     std::string name;
     int id;
     bool enc;
-    // 109062233 add for stuck at fault
-    int current_output;
-    bool stuck_fault_value;
-    bool is_stuck_faulting;
     int depth;
-    int NoP0; // detect the stuck at 0 fault
-    int NoO0; // affect bits for stuck at 0 fault
-    int NoP1; // detect the stuck at 1 fault
-    int NoO1; // affect bits for stuck at 1 fault
-    unsigned long long int fault_impact;
+    int AT; // Arrival Time at a node
+    int RAT; // Required Arrival Time at a node
 
     // operator
     const int getFIlen() { return FI_Ary.size(); }
@@ -118,6 +103,7 @@ public:
     void clearFI() { FI_Ary.clear(); }
     void clearFO() { FO_Ary.clear(); }
     const std::string stringFType();
+    const int getGateDelay();
 
 private:
     std::vector<NODE*> FI_Ary;
