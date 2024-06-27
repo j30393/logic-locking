@@ -1,7 +1,5 @@
 #!/bin/bash
 echo "running profiling"
-# Source the environment file
-# source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc
 make clean
 make -j 3
 # Define the target benchmarks
@@ -48,10 +46,8 @@ for target in "${targets[@]}"; do
     sld_output=$(sld "$test_bench" "$target")
     
     # echo $sld_output
-    # echo -e "\n\n\n"
     # Parse and extract information from the sld output
     parse_sld_output "$sld_output"
-    # echo -e "\n\n\n"
     
     # Run the lcmp command with the parsed key
     lcmp_output=$(lcmp "$target" "$test_bench" key="$key")
@@ -65,7 +61,7 @@ for target in "${targets[@]}"; do
     fi
     
     # Calculate profiling result
-    alpha=1 # not for sure the alpha & beta
+    alpha=1 # not sure of the alpha & beta
     beta=100000
     profiling_result=$(echo "scale=10; $alpha * $cube_count / ($gates * $keys) + $beta * $cpu_time / ($gates * $keys)" | bc -l)
 

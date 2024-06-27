@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& os, FType _ft)
     return os;
 }
 
-const std::string NODE::stringFType()
+std::string NODE::stringFType() const
 {
     std::string r = "";
     switch (ft) {
@@ -85,7 +85,7 @@ const std::string NODE::stringFType()
     return r;
 }
 
-const int NODE::FIfind(NODE* _node)
+int NODE::FIfind(NODE* _node) const
 {
     int return_index = 0;
     for (auto p : FI_Ary) {
@@ -97,7 +97,7 @@ const int NODE::FIfind(NODE* _node)
     return return_index;
 }
 
-const int NODE::FOfind(NODE* _node)
+int NODE::FOfind(NODE* _node) const
 {
     int return_index = 0;
     for (auto p : FO_Ary) {

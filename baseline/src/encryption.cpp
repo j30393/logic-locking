@@ -223,8 +223,6 @@ void encryption::fault_impact_cal()
 
     // setDebugMode(true);
     if (is_debug) {
-        int pattern_size = PI_Ary.size();
-        int output_size = NODE_Ary.size() - PI_Ary.size();
         for (int i = 0; i < NODE_Ary.size(); i++) {
             if (i < PI_Ary.size()) {
                 std::cout << "Node " << i << " : " << PI_Ary[i]->name << std::endl;
