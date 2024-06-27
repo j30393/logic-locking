@@ -430,8 +430,6 @@ void encryption::set_unknown(NODE* a)
 
 bool encryption::check_pairwise_secure(NODE* main, NODE* bef, bool way)
 {
-    bool ret = 1;
-
     if (way == 1)
         std::swap(main, bef);
 

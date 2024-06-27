@@ -33,11 +33,11 @@ std::ostream& operator<<(std::ostream& os, FType _ft);
 class NODE {
 public:
     NODE()
-        : enc(false)
-        , t(Type::INTERNAL)
+        : t(Type::INTERNAL)
         , ft(FType::BUF)
         , name("")
         , id(0)
+        , enc(false)
         , depth(-0xfffffff)
     {
     }
@@ -91,21 +91,21 @@ public:
     int depth;
 
     // operator
-    const int getFIlen() { return FI_Ary.size(); }
-    const int getFOlen() { return FO_Ary.size(); }
+    int getFIlen() const { return FI_Ary.size(); }
+    int getFOlen() const { return FO_Ary.size(); }
     void insertFI(NODE* _node) { FI_Ary.push_back(_node); }
     void eraseFI(NODE* _node);
     void insertFO(NODE* _node) { FO_Ary.push_back(_node); }
     void eraseFO(NODE* _node);
-    const int FIfind(NODE* _node); // return index
-    const int FOfind(NODE* _node); // return index
-    std::vector<NODE*>& getFI() { return FI_Ary; }
-    std::vector<NODE*>& getFO() { return FO_Ary; }
+    int FIfind(NODE* _node) const; // return index
+    int FOfind(NODE* _node) const; // return index
+    const std::vector<NODE*>& getFI() const { return FI_Ary; }
+    const std::vector<NODE*>& getFO() const { return FO_Ary; }
     void clearFI() { FI_Ary.clear(); }
     void clearFO() { FO_Ary.clear(); }
-    const std::string stringFType();
+    std::string stringFType() const;
     // 109062233 add for stuck at fault
-    const int getCurrentOutput() { return calculateValue(); }
+    int getCurrentOutput() { return calculateValue(); }
     void setCurrentOutput(int _b) { current_output = _b; }
     bool calculateValue();
 
