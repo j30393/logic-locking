@@ -3,7 +3,7 @@ echo "running profiling"
 # Source the environment file
 # source /home/HardwareSecurity112/tools/HS_Final_Project/env.cshrc
 make clean
-make
+make -j 3
 # Define the target benchmarks
 targets=(
     "./benchmark/c17.bench"
