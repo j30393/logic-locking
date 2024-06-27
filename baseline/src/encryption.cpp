@@ -26,7 +26,8 @@ encryption::~encryption()
     }
 }
 
-std::vector<NODE*> getRandomKNodes(const std::vector<NODE*>& nodes, size_t k) {
+std::vector<NODE*> getRandomKNodes(const std::vector<NODE*>& nodes, size_t k)
+{
     // Copy the nodes to a new vector to avoid modifying the original
     std::vector<NODE*> shuffled_nodes = nodes;
 
@@ -35,12 +36,13 @@ std::vector<NODE*> getRandomKNodes(const std::vector<NODE*>& nodes, size_t k) {
 
     std::random_shuffle(shuffled_nodes.begin(), shuffled_nodes.end());
 
-    for (auto it: shuffled_nodes){
+    for (auto it : shuffled_nodes) {
         // Determine whether the node is not on a critical path
         // TODO: replace 1 with the delay of 2-input XOR or XNOR?
-        if (it->RAT - it->AT >= 1){
+        if (it->RAT - it->AT >= 1) {
             random_nodes.push_back(it);
-            if (!--k) break;
+            if (!--k)
+                break;
         }
     }
 
@@ -395,11 +397,11 @@ void encryption::topological_sort()
 
     // Compute the RAT in reverse topological order
     int critical_path = 0;
-    for (auto it: PO_Ary)
+    for (auto it : PO_Ary)
         critical_path = std::max(critical_path, it->AT);
-    for (auto p = NODE_Ary.rbegin(); p != NODE_Ary.rend(); ++p){
+    for (auto p = NODE_Ary.rbegin(); p != NODE_Ary.rend(); ++p) {
         int RAT = critical_path;
-        for (auto it: (*p)->getFO())
+        for (auto it : (*p)->getFO())
             RAT = std::min(RAT, it->RAT - it->getGateDelay());
         (*p)->RAT = RAT;
     }
