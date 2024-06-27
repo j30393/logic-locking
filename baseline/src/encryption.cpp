@@ -32,15 +32,15 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
     std::vector<bool> output;
     assert(input.size() == PI_Ary.size());
     for (auto n : NODE_Ary) {
-        n->current_output = 2;
+        n->setCurrentOutput(2);
     }
     for (int i = 0; i < PI_Ary.size(); i++) {
         if (NODE_Ary[i]->is_stuck_faulting) {
-            NODE_Ary[i]->current_output = NODE_Ary[i]->stuck_fault_value;
+            NODE_Ary[i]->setCurrentOutput(NODE_Ary[i]->stuck_fault_value);
         } else {
-            NODE_Ary[i]->current_output = input[i];
+            NODE_Ary[i]->setCurrentOutput(input[i]);
         }
-        output.push_back(NODE_Ary[i]->current_output);
+        output.push_back(NODE_Ary[i]->getCurrentOutput());
     }
     // calculate the output
     for (int i = PI_Ary.size(); i < NODE_Ary.size(); i++) {
@@ -48,7 +48,7 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
         NODE* n = NODE_Ary[i];
         int ans = -1;
         for (auto p : n->getFI()) {
-            if (p->current_output == 2) {
+            if (p->getCurrentOutput() == 2) {
                 std::cout << "Current node: " << n->name << std::endl;
                 std::cout << "fan in name: " << p->name << std::endl;
                 std::cout << "error: topology sort failed" << std::endl;
@@ -61,21 +61,21 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
             case (FType::AND): {
                 ans = 1;
                 for (auto p : n->getFI()) {
-                    ans = ans & p->current_output;
+                    ans = ans & p->getCurrentOutput();
                 }
                 break;
             }
             case (FType::OR): {
                 ans = 0;
                 for (auto p : n->getFI()) {
-                    ans = ans | p->current_output;
+                    ans = ans | p->getCurrentOutput();
                 }
                 break;
             }
             case (FType::NAND): {
                 ans = 1;
                 for (auto p : n->getFI()) {
-                    ans = ans & p->current_output;
+                    ans = ans & p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
@@ -83,7 +83,7 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
             case (FType::NOR): {
                 ans = 0;
                 for (auto p : n->getFI()) {
-                    ans = ans | p->current_output;
+                    ans = ans | p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
@@ -91,26 +91,26 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
             case (FType::XOR): {
                 ans = 0;
                 for (auto p : n->getFI()) {
-                    ans = ans ^ p->current_output;
+                    ans = ans ^ p->getCurrentOutput();
                 }
                 break;
             }
             case (FType::XNOR): {
                 ans = 0;
                 for (auto p : n->getFI()) {
-                    ans = ans ^ p->current_output;
+                    ans = ans ^ p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
             }
             case (FType::NOT): {
                 assert(n->getFIlen() == 1);
-                ans = !n->getFI()[0]->current_output;
+                ans = !n->getFI()[0]->getCurrentOutput();
                 break;
             }
             case (FType::BUF): {
                 assert(n->getFIlen() == 1);
-                ans = n->getFI()[0]->current_output;
+                ans = n->getFI()[0]->getCurrentOutput();
                 break;
             }
             default: {
@@ -118,7 +118,7 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
             }
             }
         }
-        n->current_output = ans;
+        n->setCurrentOutput(ans);
         output.push_back(ans);
     }
     assert(output.size() == NODE_Ary.size());

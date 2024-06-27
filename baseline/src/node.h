@@ -94,7 +94,6 @@ public:
     int id;
     bool enc;
     // 109062233 add for stuck at fault
-    int current_output;
     bool stuck_fault_value;
     bool is_stuck_faulting;
     int depth;
@@ -118,10 +117,14 @@ public:
     void clearFI() { FI_Ary.clear(); }
     void clearFO() { FO_Ary.clear(); }
     std::string stringFType() const;
+    // 109062233 add for stuck at fault
+    int getCurrentOutput() { return current_output; }
+    void setCurrentOutput(int _b) { current_output = _b; }
 
 private:
     std::vector<NODE*> FI_Ary;
     std::vector<NODE*> FO_Ary;
+    int current_output;
 };
 
 #endif
