@@ -261,10 +261,11 @@ void encryption::xor_encryption()
     }
 
     if (is_debug) {
-        std::cout << "encryption key_arr: ";
+        std::cout << "encryption key_arr:";
         for (auto key_element : key_arr) {
-            std::cout << key_element << " ";
+            std::cout << " " << key_element;
         }
+        std::cout << "\n";
     }
 
     // If the key-bit is '0', then the key-gate
@@ -289,7 +290,10 @@ void encryption::xor_encryption()
                 xor_node->insertFI(key_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->getFO().empty()) {
+                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                    // change encoded node
+                    enc_node->t = Type::INTERNAL;
+                    xor_node->t = Type::PRIMARY_OUTPUT;
                     xor_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
@@ -323,7 +327,10 @@ void encryption::xor_encryption()
                 xnor_node->insertFO(not_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->getFO().empty()) {
+                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                    // change encoded node
+                    enc_node->t = Type::INTERNAL;
+                    not_node->t = Type::PRIMARY_OUTPUT;
                     not_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
@@ -359,7 +366,10 @@ void encryption::xor_encryption()
                 xnor_node->insertFI(key_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->getFO().empty()) {
+                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                    // change encoded node
+                    enc_node->t = Type::INTERNAL;
+                    xnor_node->t = Type::PRIMARY_OUTPUT;
                     xnor_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
@@ -393,7 +403,10 @@ void encryption::xor_encryption()
                 xor_node->insertFO(not_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->getFO().empty()) {
+                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                    // change encoded node
+                    enc_node->t = Type::INTERNAL;
+                    not_node->t = Type::PRIMARY_OUTPUT;
                     not_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
