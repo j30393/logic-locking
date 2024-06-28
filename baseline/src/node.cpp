@@ -1,16 +1,16 @@
 #include "node.h"
 #include <iostream>
 
-std::ostream& operator<<(std::ostream& os, Type _t)
+std::ostream& operator<<(std::ostream& os, NodeType _type)
 {
-    switch (_t) {
-    case Type::INTERNAL:
+    switch (_type) {
+    case NodeType::INTERNAL:
         os << "INTERNAL";
         break;
-    case Type::PRIMARY_INPUT:
+    case NodeType::PRIMARY_INPUT:
         os << "PRIMARY_INPUT";
         break;
-    case Type::PRIMARY_OUTPUT:
+    case NodeType::PRIMARY_OUTPUT:
         os << "PRIMARY_OUTPUT";
         break;
     default:
@@ -19,31 +19,31 @@ std::ostream& operator<<(std::ostream& os, Type _t)
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, FType _ft)
+std::ostream& operator<<(std::ostream& os, GateType _gate)
 {
-    switch (_ft) {
-    case FType::AND:
+    switch (_gate) {
+    case GateType::AND:
         os << "AND";
         break;
-    case FType::OR:
+    case GateType::OR:
         os << "OR";
         break;
-    case FType::NOR:
+    case GateType::NOR:
         os << "NOR";
         break;
-    case FType::NAND:
+    case GateType::NAND:
         os << "NAND";
         break;
-    case FType::NOT:
+    case GateType::NOT:
         os << "NOT";
         break;
-    case FType::XNOR:
+    case GateType::XNOR:
         os << "XNOR";
         break;
-    case FType::XOR:
+    case GateType::XOR:
         os << "XOR";
         break;
-    case FType::BUF:
+    case GateType::BUF:
         os << "BUF";
         break;
     default:
@@ -52,32 +52,32 @@ std::ostream& operator<<(std::ostream& os, FType _ft)
     return os;
 }
 
-std::string NODE::stringFType() const
+std::string NODE::gate_as_string() const
 {
     std::string r = "";
-    switch (ft) {
-    case FType::AND:
+    switch (gate) {
+    case GateType::AND:
         r = "AND";
         break;
-    case FType::OR:
+    case GateType::OR:
         r = "OR";
         break;
-    case FType::NOR:
+    case GateType::NOR:
         r = "NOR";
         break;
-    case FType::NAND:
+    case GateType::NAND:
         r = "NAND";
         break;
-    case FType::NOT:
+    case GateType::NOT:
         r = "NOT";
         break;
-    case FType::XNOR:
+    case GateType::XNOR:
         r = "XNOR";
         break;
-    case FType::XOR:
+    case GateType::XOR:
         r = "XOR";
         break;
-    case FType::BUF:
+    case GateType::BUF:
         r = "BUF";
         break;
     default:
@@ -86,10 +86,10 @@ std::string NODE::stringFType() const
     return r;
 }
 
-int NODE::FIfind(NODE* _node) const
+int NODE::find_fan_in(NODE* _node) const
 {
     int return_index = 0;
-    for (auto p : FI_Ary) {
+    for (auto p : fan_ins) {
         if (*p == _node) {
             return return_index;
         }
@@ -98,10 +98,10 @@ int NODE::FIfind(NODE* _node) const
     return return_index;
 }
 
-int NODE::FOfind(NODE* _node) const
+int NODE::find_fan_out(NODE* _node) const
 {
     int return_index = 0;
-    for (auto p : FO_Ary) {
+    for (auto p : fan_outs) {
         if (*p == _node) {
             return return_index;
         }
@@ -110,58 +110,58 @@ int NODE::FOfind(NODE* _node) const
     return return_index;
 }
 
-void NODE::eraseFI(NODE* _node)
+void NODE::erase_fan_in(NODE* _node)
 {
-    FI_Ary.erase(FI_Ary.begin() + FIfind(_node));
+    fan_ins.erase(fan_ins.begin() + find_fan_in(_node));
 }
 
-void NODE::eraseFO(NODE* _node)
+void NODE::erase_fan_out(NODE* _node)
 {
-    FO_Ary.erase(FO_Ary.begin() + FOfind(_node));
+    fan_outs.erase(fan_outs.begin() + find_fan_out(_node));
 }
 
 bool NODE::calculateValue()
 {
     if (current_output == 0 || current_output == 1)
         return current_output;
-    if (t == Type::PRIMARY_INPUT) {
+    if (type == NodeType::PRIMARY_INPUT) {
         current_output = rand() % 2;
         return current_output;
     }
     bool ans;
-    FType cur = ft;
+    GateType cur = gate;
     if (stuck_fault_value) {
-        switch (ft) {
-        case (FType::AND): {
-            cur = FType::NAND;
+        switch (gate) {
+        case (GateType::AND): {
+            cur = GateType::NAND;
             break;
         }
-        case (FType::OR): {
-            cur = FType::NOR;
+        case (GateType::OR): {
+            cur = GateType::NOR;
             break;
         }
-        case (FType::NAND): {
-            cur = FType::AND;
+        case (GateType::NAND): {
+            cur = GateType::AND;
             break;
         }
-        case (FType::NOR): {
-            cur = FType::OR;
+        case (GateType::NOR): {
+            cur = GateType::OR;
             break;
         }
-        case (FType::XOR): {
-            cur = FType::XNOR;
+        case (GateType::XOR): {
+            cur = GateType::XNOR;
             break;
         }
-        case (FType::XNOR): {
-            cur = FType::XOR;
+        case (GateType::XNOR): {
+            cur = GateType::XOR;
             break;
         }
-        case (FType::NOT): {
-            cur = FType::BUF;
+        case (GateType::NOT): {
+            cur = GateType::BUF;
             break;
         }
-        case (FType::BUF): {
-            cur = FType::NOT;
+        case (GateType::BUF): {
+            cur = GateType::NOT;
             break;
         }
         default: {
@@ -171,57 +171,57 @@ bool NODE::calculateValue()
     }
 
     switch (cur) {
-    case (FType::AND): {
+    case (GateType::AND): {
         ans = 1;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans & p->getCurrentOutput();
         }
         break;
     }
-    case (FType::OR): {
+    case (GateType::OR): {
         ans = 0;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans | p->getCurrentOutput();
         }
         break;
     }
-    case (FType::NAND): {
+    case (GateType::NAND): {
         ans = 1;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans & p->getCurrentOutput();
         }
         ans = !ans;
         break;
     }
-    case (FType::NOR): {
+    case (GateType::NOR): {
         ans = 0;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans | p->getCurrentOutput();
         }
         ans = !ans;
         break;
     }
-    case (FType::XOR): {
+    case (GateType::XOR): {
         ans = 0;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans ^ p->getCurrentOutput();
         }
         break;
     }
-    case (FType::XNOR): {
+    case (GateType::XNOR): {
         ans = 0;
-        for (auto p : FI_Ary) {
+        for (auto p : fan_ins) {
             ans = ans ^ p->getCurrentOutput();
         }
         ans = !ans;
         break;
     }
-    case (FType::NOT): {
-        ans = !FI_Ary[0]->getCurrentOutput();
+    case (GateType::NOT): {
+        ans = !fan_ins[0]->getCurrentOutput();
         break;
     }
-    case (FType::BUF): {
-        ans = FI_Ary[0]->getCurrentOutput();
+    case (GateType::BUF): {
+        ans = fan_ins[0]->getCurrentOutput();
         break;
     }
     default: {
