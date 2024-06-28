@@ -47,9 +47,9 @@ void encryption::sl_compare_encryption()
     }
 
     if (is_debug) {
-        std::cout << "encryption key_arr: ";
+        std::cout << "encryption key_arr:";
         for (auto key_element : key_arr) {
-            std::cout << key_element << " ";
+            std::cout << " " << key_element;
         }
         std::cout << "\n";
     }
@@ -119,10 +119,14 @@ void encryption::sl_compare_encryption()
             enc_node->t = Type::INTERNAL;
             enc_node->insertFO(xor_node);
             xor_node->name = enc_node->name;
-            enc_node->name = enc_node->name + std::to_string(i);
+            // ptw = plaintext wire
+            enc_node->name = enc_node->name + "$ptw";
             *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 
             // xor node & all other nodes
+            assert(name2node.find(enc_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
+            name2node[enc_node->name] = enc_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             xor_node->t = Type::PRIMARY_OUTPUT;
@@ -141,6 +145,8 @@ void encryption::sl_compare_encryption()
             key_node->insertFO(xor_node);
 
             // xor node & all other nodes
+            assert(name2node.find(xor_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             while (!checker.empty()) {
@@ -176,9 +182,9 @@ void encryption::sl_brute_encryption()
     }
 
     if (is_debug) {
-        std::cout << "encryption key_arr: ";
+        std::cout << "encryption key_arr:";
         for (auto key_element : key_arr) {
-            std::cout << key_element << " ";
+            std::cout << " " << key_element;
         }
         std::cout << "\n";
     }
@@ -267,10 +273,14 @@ void encryption::sl_brute_encryption()
             enc_node->t = Type::INTERNAL;
             enc_node->insertFO(xor_node);
             xor_node->name = enc_node->name;
-            enc_node->name = enc_node->name + std::to_string(i);
+            // ptw = plaintext wire
+            enc_node->name = enc_node->name + "$ptw";
             *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 
             // xor node & all other nodes
+            assert(name2node.find(enc_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
+            name2node[enc_node->name] = enc_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             xor_node->t = Type::PRIMARY_OUTPUT;
@@ -289,6 +299,8 @@ void encryption::sl_brute_encryption()
             key_node->insertFO(xor_node);
 
             // xor node & all other nodes
+            assert(name2node.find(xor_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             while (!checker.empty()) {
@@ -505,9 +517,9 @@ void encryption::sl_one_encryption()
     }
 
     if (is_debug) {
-        std::cout << "encryption key_arr: ";
+        std::cout << "encryption key_arr:";
         for (auto key_element : key_arr) {
-            std::cout << key_element << " ";
+            std::cout << " " << key_element;
         }
         std::cout << "\n";
     }
@@ -564,10 +576,14 @@ void encryption::sl_one_encryption()
             enc_node->t = Type::INTERNAL;
             enc_node->insertFO(xor_node);
             xor_node->name = enc_node->name;
-            enc_node->name = enc_node->name + std::to_string(i);
+            // ptw = plaintext wire
+            enc_node->name = enc_node->name + "$ptw";
             *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
 
             // xor node & all other nodes
+            assert(name2node.find(enc_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
+            name2node[enc_node->name] = enc_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             xor_node->t = Type::PRIMARY_OUTPUT;
@@ -586,6 +602,8 @@ void encryption::sl_one_encryption()
             key_node->insertFO(xor_node);
 
             // xor node & all other nodes
+            assert(name2node.find(xor_node->name) == name2node.end());
+            name2node[xor_node->name] = xor_node;
             xor_node->insertFI(enc_node);
             xor_node->insertFI(key_node);
             while (!to_be_checked.empty()) {
