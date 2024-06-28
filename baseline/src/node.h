@@ -9,15 +9,15 @@
 
 #define debug
 
-enum class Type {
+enum class NodeType {
     INTERNAL,
     PRIMARY_INPUT,
     PRIMARY_OUTPUT
 };
 
-std::ostream& operator<<(std::ostream& os, Type _t);
+std::ostream& operator<<(std::ostream& os, NodeType _type);
 
-enum class FType {
+enum class GateType {
     AND,
     OR,
     NOR,
@@ -28,13 +28,13 @@ enum class FType {
     XNOR
 };
 
-std::ostream& operator<<(std::ostream& os, FType _ft);
+std::ostream& operator<<(std::ostream& os, GateType _gate);
 
 class NODE {
 public:
     NODE()
-        : t(Type::INTERNAL)
-        , ft(FType::BUF)
+        : type(NodeType::INTERNAL)
+        , gate(GateType::BUF)
         , name("")
         , id(0)
         , enc(false)
@@ -48,9 +48,9 @@ public:
     {
     }
 
-    NODE(Type _t, FType _ft, std::string _name)
-        : t(_t)
-        , ft(_ft)
+    NODE(NodeType _t, GateType _ft, std::string _name)
+        : type(_t)
+        , gate(_ft)
         , name(_name)
         , id(0)
         , enc(false)
@@ -71,13 +71,13 @@ public:
     // operator overloading
     bool operator==(NODE* _A)
     {
-        return name == _A->name && ft == _A->ft;
+        return name == _A->name && gate == _A->gate;
     }
 
     friend std::ostream& operator<<(std::ostream& os, NODE* p);
 
-    Type t;
-    FType ft;
+    NodeType type;
+    GateType gate;
     std::string name;
     int id;
     bool enc;
@@ -92,26 +92,26 @@ public:
     unsigned long long int fault_impact;
 
     // operator
-    int getFIlen() const { return FI_Ary.size(); }
-    int getFOlen() const { return FO_Ary.size(); }
-    void insertFI(NODE* _node) { FI_Ary.push_back(_node); }
-    void eraseFI(NODE* _node);
-    void insertFO(NODE* _node) { FO_Ary.push_back(_node); }
-    void eraseFO(NODE* _node);
-    int FIfind(NODE* _node) const; // return index
-    int FOfind(NODE* _node) const; // return index
-    const std::vector<NODE*>& getFI() const { return FI_Ary; }
-    const std::vector<NODE*>& getFO() const { return FO_Ary; }
-    void clearFI() { FI_Ary.clear(); }
-    void clearFO() { FO_Ary.clear(); }
-    std::string stringFType() const;
+    int get_fan_in_count() const { return fan_ins.size(); }
+    int get_fan_out_count() const { return fan_outs.size(); }
+    void insert_fan_in(NODE* _node) { fan_ins.push_back(_node); }
+    void erase_fan_in(NODE* _node);
+    void insert_fan_out(NODE* _node) { fan_outs.push_back(_node); }
+    void erase_fan_out(NODE* _node);
+    int find_fan_in(NODE* _node) const; // return index
+    int find_fan_out(NODE* _node) const; // return index
+    const std::vector<NODE*>& get_fan_ins() const { return fan_ins; }
+    const std::vector<NODE*>& get_fan_outs() const { return fan_outs; }
+    void clear_fan_ins() { fan_ins.clear(); }
+    void clear_fan_outs() { fan_outs.clear(); }
+    std::string gate_as_string() const;
     // 109062233 add for stuck at fault
     int getCurrentOutput() { return current_output; }
     void setCurrentOutput(int _b) { current_output = _b; }
 
 private:
-    std::vector<NODE*> FI_Ary;
-    std::vector<NODE*> FO_Ary;
+    std::vector<NODE*> fan_ins;
+    std::vector<NODE*> fan_outs;
     int current_output;
 };
 

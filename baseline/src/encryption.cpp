@@ -15,13 +15,13 @@ encryption::encryption()
 
 encryption::~encryption()
 {
-    for (auto p : NODE_Ary) {
+    for (auto p : nodes) {
         delete p;
     }
-    for (auto p : KEY_Ary) {
+    for (auto p : key_inputs) {
         delete p;
     }
-    for (auto p : ENCY_Ary) {
+    for (auto p : encrypted_nodes) {
         delete p;
     }
 }
@@ -30,24 +30,24 @@ encryption::~encryption()
 std::vector<bool> encryption::solver(std::vector<bool> input)
 {
     std::vector<bool> output;
-    assert(input.size() == PI_Ary.size());
-    for (auto n : NODE_Ary) {
+    assert(input.size() == primary_inputs.size());
+    for (auto n : nodes) {
         n->setCurrentOutput(2);
     }
-    for (int i = 0; i < PI_Ary.size(); i++) {
-        if (NODE_Ary[i]->is_stuck_faulting) {
-            NODE_Ary[i]->setCurrentOutput(NODE_Ary[i]->stuck_fault_value);
+    for (int i = 0; i < primary_inputs.size(); i++) {
+        if (nodes[i]->is_stuck_faulting) {
+            nodes[i]->setCurrentOutput(nodes[i]->stuck_fault_value);
         } else {
-            NODE_Ary[i]->setCurrentOutput(input[i]);
+            nodes[i]->setCurrentOutput(input[i]);
         }
-        output.push_back(NODE_Ary[i]->getCurrentOutput());
+        output.push_back(nodes[i]->getCurrentOutput());
     }
     // calculate the output
-    for (int i = PI_Ary.size(); i < NODE_Ary.size(); i++) {
+    for (int i = primary_inputs.size(); i < nodes.size(); i++) {
         // n is the current node
-        NODE* n = NODE_Ary[i];
+        NODE* n = nodes[i];
         int ans = -1;
-        for (auto p : n->getFI()) {
+        for (auto p : n->get_fan_ins()) {
             if (p->getCurrentOutput() == 2) {
                 std::cout << "Current node: " << n->name << std::endl;
                 std::cout << "fan in name: " << p->name << std::endl;
@@ -57,60 +57,60 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
         if (n->is_stuck_faulting) {
             ans = n->stuck_fault_value;
         } else {
-            switch (n->ft) {
-            case (FType::AND): {
+            switch (n->gate) {
+            case (GateType::AND): {
                 ans = 1;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans & p->getCurrentOutput();
                 }
                 break;
             }
-            case (FType::OR): {
+            case (GateType::OR): {
                 ans = 0;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans | p->getCurrentOutput();
                 }
                 break;
             }
-            case (FType::NAND): {
+            case (GateType::NAND): {
                 ans = 1;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans & p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
             }
-            case (FType::NOR): {
+            case (GateType::NOR): {
                 ans = 0;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans | p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
             }
-            case (FType::XOR): {
+            case (GateType::XOR): {
                 ans = 0;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans ^ p->getCurrentOutput();
                 }
                 break;
             }
-            case (FType::XNOR): {
+            case (GateType::XNOR): {
                 ans = 0;
-                for (auto p : n->getFI()) {
+                for (auto p : n->get_fan_ins()) {
                     ans = ans ^ p->getCurrentOutput();
                 }
                 ans = !ans;
                 break;
             }
-            case (FType::NOT): {
-                assert(n->getFIlen() == 1);
-                ans = !n->getFI()[0]->getCurrentOutput();
+            case (GateType::NOT): {
+                assert(n->get_fan_in_count() == 1);
+                ans = !n->get_fan_ins()[0]->getCurrentOutput();
                 break;
             }
-            case (FType::BUF): {
-                assert(n->getFIlen() == 1);
-                ans = n->getFI()[0]->getCurrentOutput();
+            case (GateType::BUF): {
+                assert(n->get_fan_in_count() == 1);
+                ans = n->get_fan_ins()[0]->getCurrentOutput();
                 break;
             }
             default: {
@@ -121,7 +121,7 @@ std::vector<bool> encryption::solver(std::vector<bool> input)
         n->setCurrentOutput(ans);
         output.push_back(ans);
     }
-    assert(output.size() == NODE_Ary.size());
+    assert(output.size() == nodes.size());
     return output;
 }
 
@@ -171,17 +171,17 @@ std::vector<NODE*> getTopKNodes(const std::vector<NODE*>& nodes, size_t k)
 void encryption::fault_impact_cal()
 {
     int num_tested = test_num;
-    std::vector<bool> test_pattern(PI_Ary.size(), false);
+    std::vector<bool> test_pattern(primary_inputs.size(), false);
     std::vector<bool> golden_output;
     std::vector<bool> sa0_output;
     std::vector<bool> sa1_output;
 
     for (int iteration = 0; iteration < num_tested; iteration++) {
-        for (int i = 0; i < PI_Ary.size(); i++) {
+        for (int i = 0; i < primary_inputs.size(); i++) {
             test_pattern[i] = rand() % 2;
         }
         golden_output = solver(test_pattern);
-        for (auto n : NODE_Ary) {
+        for (auto n : nodes) {
             // stuck at 0
             n->is_stuck_faulting = true;
             n->stuck_fault_value = 0;
@@ -206,14 +206,14 @@ void encryption::fault_impact_cal()
         }
     }
     // setDebugMode(true);
-    for (auto node : NODE_Ary) {
+    for (auto node : nodes) {
         node->fault_impact = (node->NoO0 * node->NoP0 + node->NoO1 * node->NoP1);
         if (is_debug) {
             std::cout << "Node " << node->name << " fault impact: " << node->fault_impact << std::endl;
         }
     }
     if (is_debug) {
-        for (auto node : NODE_Ary) {
+        for (auto node : nodes) {
             std::cout << "Node " << node->name << std::endl;
             std::cout << "NoO0: " << node->NoO0 << " NoP0: " << node->NoP0 << std::endl;
             std::cout << "NoO1: " << node->NoO1 << " NoP1: " << node->NoP1 << std::endl;
@@ -223,13 +223,13 @@ void encryption::fault_impact_cal()
 
     // setDebugMode(true);
     if (is_debug) {
-        for (int i = 0; i < NODE_Ary.size(); i++) {
-            if (i < PI_Ary.size()) {
-                std::cout << "Node " << i << " : " << PI_Ary[i]->name << std::endl;
+        for (int i = 0; i < nodes.size(); i++) {
+            if (i < primary_inputs.size()) {
+                std::cout << "Node " << i << " : " << primary_inputs[i]->name << std::endl;
                 std::cout << "Test value : " << test_pattern[i] << std::endl;
             } else {
-                std::cout << "Node " << i << " : " << NODE_Ary[i]->name << std::endl;
-                std::cout << "Output value : " << golden_output[i - PI_Ary.size()] << std::endl;
+                std::cout << "Node " << i << " : " << nodes[i]->name << std::endl;
+                std::cout << "Output value : " << golden_output[i - primary_inputs.size()] << std::endl;
             }
         }
     }
@@ -240,10 +240,10 @@ void encryption::fault_impact_cal()
 // xor encryption
 void encryption::xor_encryption()
 {
-    int total_enc_num = ceil(this->key_ratio * PI_Ary.size());
-    total_enc_num = std::min(total_enc_num, static_cast<int>(NODE_Ary.size()));
-    assert(total_enc_num <= NODE_Ary.size());
-    std::vector<NODE*> enc_nodes = getTopKNodes(NODE_Ary, total_enc_num);
+    int total_enc_num = ceil(this->key_ratio * primary_inputs.size());
+    total_enc_num = std::min(total_enc_num, static_cast<int>(nodes.size()));
+    assert(total_enc_num <= nodes.size());
+    std::vector<NODE*> enc_nodes = getTopKNodes(nodes, total_enc_num);
     total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
     assert(total_enc_num > 0);
     this->total_key_num = total_enc_num;
@@ -277,155 +277,155 @@ void encryption::xor_encryption()
         NODE* enc_node = enc_nodes[i];
         if (key_arr[i] == 0) {
             // XOR gate
-            NODE* key_node = new NODE(Type::PRIMARY_INPUT, FType::BUF, "keyinput" + std::to_string(i));
+            NODE* key_node = new NODE(NodeType::PRIMARY_INPUT, GateType::BUF, "keyinput" + std::to_string(i));
             assert(name2node.find(key_node->name) == name2node.end());
-            KEY_Ary.push_back(key_node);
+            key_inputs.push_back(key_node);
             name2node[key_node->name] = key_node;
             int type = rand() % 2;
             if (type == 1) {
                 // xor gate
-                NODE* xor_node = new NODE(Type::INTERNAL, FType::XOR, "xor" + std::to_string(i));
-                ENCY_Ary.push_back(xor_node);
-                xor_node->insertFI(enc_node);
-                xor_node->insertFI(key_node);
+                NODE* xor_node = new NODE(NodeType::INTERNAL, GateType::XOR, "xor" + std::to_string(i));
+                encrypted_nodes.push_back(xor_node);
+                xor_node->insert_fan_in(enc_node);
+                xor_node->insert_fan_in(key_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                if (enc_node->type == NodeType::PRIMARY_OUTPUT) {
                     // change encoded node
-                    enc_node->t = Type::INTERNAL;
-                    xor_node->t = Type::PRIMARY_OUTPUT;
+                    enc_node->type = NodeType::INTERNAL;
+                    xor_node->type = NodeType::PRIMARY_OUTPUT;
                     xor_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
                     assert(name2node.find(enc_node->name) == name2node.end());
                     name2node[xor_node->name] = xor_node;
                     name2node[enc_node->name] = enc_node;
-                    *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xor_node;
+                    *std::find(primary_outputs.begin(), primary_outputs.end(), enc_node) = xor_node;
                 } else { // none output node
                     assert(name2node.find(xor_node->name) == name2node.end());
                     name2node[xor_node->name] = xor_node;
-                    for (auto fan_out_node : enc_node->getFO()) {
-                        fan_out_node->insertFI(xor_node);
-                        fan_out_node->eraseFI(enc_node);
-                        xor_node->insertFO(fan_out_node);
+                    for (auto fan_out_node : enc_node->get_fan_outs()) {
+                        fan_out_node->insert_fan_in(xor_node);
+                        fan_out_node->erase_fan_in(enc_node);
+                        xor_node->insert_fan_out(fan_out_node);
                     }
-                    enc_node->clearFO();
+                    enc_node->clear_fan_outs();
                 }
-                enc_node->insertFO(xor_node);
-                key_node->insertFO(xor_node);
+                enc_node->insert_fan_out(xor_node);
+                key_node->insert_fan_out(xor_node);
             } else {
                 // xnor gate + not
-                NODE* xnor_node = new NODE(Type::INTERNAL, FType::XNOR, "xnor" + std::to_string(i));
+                NODE* xnor_node = new NODE(NodeType::INTERNAL, GateType::XNOR, "xnor" + std::to_string(i));
                 assert(name2node.find(xnor_node->name) == name2node.end());
                 name2node[xnor_node->name] = xnor_node;
-                ENCY_Ary.push_back(xnor_node);
-                xnor_node->insertFI(enc_node);
-                xnor_node->insertFI(key_node);
-                NODE* not_node = new NODE(Type::INTERNAL, FType::NOT, "not" + std::to_string(i));
-                ENCY_Ary.push_back(not_node);
-                not_node->insertFI(xnor_node);
-                xnor_node->insertFO(not_node);
+                encrypted_nodes.push_back(xnor_node);
+                xnor_node->insert_fan_in(enc_node);
+                xnor_node->insert_fan_in(key_node);
+                NODE* not_node = new NODE(NodeType::INTERNAL, GateType::NOT, "not" + std::to_string(i));
+                encrypted_nodes.push_back(not_node);
+                not_node->insert_fan_in(xnor_node);
+                xnor_node->insert_fan_out(not_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                if (enc_node->type == NodeType::PRIMARY_OUTPUT) {
                     // change encoded node
-                    enc_node->t = Type::INTERNAL;
-                    not_node->t = Type::PRIMARY_OUTPUT;
+                    enc_node->type = NodeType::INTERNAL;
+                    not_node->type = NodeType::PRIMARY_OUTPUT;
                     not_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
                     assert(name2node.find(enc_node->name) == name2node.end());
                     name2node[not_node->name] = not_node;
                     name2node[enc_node->name] = enc_node;
-                    *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
+                    *std::find(primary_outputs.begin(), primary_outputs.end(), enc_node) = not_node;
                 } else { // none output node
                     assert(name2node.find(not_node->name) == name2node.end());
                     name2node[not_node->name] = not_node;
-                    for (auto fan_out_node : enc_node->getFO()) {
-                        fan_out_node->insertFI(not_node);
-                        fan_out_node->eraseFI(enc_node);
-                        not_node->insertFO(fan_out_node);
+                    for (auto fan_out_node : enc_node->get_fan_outs()) {
+                        fan_out_node->insert_fan_in(not_node);
+                        fan_out_node->erase_fan_in(enc_node);
+                        not_node->insert_fan_out(fan_out_node);
                     }
-                    enc_node->clearFO();
+                    enc_node->clear_fan_outs();
                 }
-                enc_node->insertFO(xnor_node);
-                key_node->insertFO(xnor_node);
+                enc_node->insert_fan_out(xnor_node);
+                key_node->insert_fan_out(xnor_node);
             }
         } else {
             // XNOR gate
-            NODE* key_node = new NODE(Type::PRIMARY_INPUT, FType::BUF, "keyinput" + std::to_string(i));
+            NODE* key_node = new NODE(NodeType::PRIMARY_INPUT, GateType::BUF, "keyinput" + std::to_string(i));
             assert(name2node.find(key_node->name) == name2node.end());
-            KEY_Ary.push_back(key_node);
+            key_inputs.push_back(key_node);
             name2node[key_node->name] = key_node;
             int type = rand() % 2;
             if (type == 1) {
                 // xnor gate
-                NODE* xnor_node = new NODE(Type::INTERNAL, FType::XNOR, "xnor" + std::to_string(i));
-                ENCY_Ary.push_back(xnor_node);
-                xnor_node->insertFI(enc_node);
-                xnor_node->insertFI(key_node);
+                NODE* xnor_node = new NODE(NodeType::INTERNAL, GateType::XNOR, "xnor" + std::to_string(i));
+                encrypted_nodes.push_back(xnor_node);
+                xnor_node->insert_fan_in(enc_node);
+                xnor_node->insert_fan_in(key_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                if (enc_node->type == NodeType::PRIMARY_OUTPUT) {
                     // change encoded node
-                    enc_node->t = Type::INTERNAL;
-                    xnor_node->t = Type::PRIMARY_OUTPUT;
+                    enc_node->type = NodeType::INTERNAL;
+                    xnor_node->type = NodeType::PRIMARY_OUTPUT;
                     xnor_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
                     assert(name2node.find(enc_node->name) == name2node.end());
                     name2node[xnor_node->name] = xnor_node;
                     name2node[enc_node->name] = enc_node;
-                    *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = xnor_node;
+                    *std::find(primary_outputs.begin(), primary_outputs.end(), enc_node) = xnor_node;
                 } else { // none output node
                     assert(name2node.find(xnor_node->name) == name2node.end());
                     name2node[xnor_node->name] = xnor_node;
-                    for (auto fan_out_node : enc_node->getFO()) {
-                        fan_out_node->insertFI(xnor_node);
-                        fan_out_node->eraseFI(enc_node);
-                        xnor_node->insertFO(fan_out_node);
+                    for (auto fan_out_node : enc_node->get_fan_outs()) {
+                        fan_out_node->insert_fan_in(xnor_node);
+                        fan_out_node->erase_fan_in(enc_node);
+                        xnor_node->insert_fan_out(fan_out_node);
                     }
-                    enc_node->clearFO();
+                    enc_node->clear_fan_outs();
                 }
-                enc_node->insertFO(xnor_node);
-                key_node->insertFO(xnor_node);
+                enc_node->insert_fan_out(xnor_node);
+                key_node->insert_fan_out(xnor_node);
             } else {
                 // xor gate + not
-                NODE* xor_node = new NODE(Type::INTERNAL, FType::XOR, "xor" + std::to_string(i));
+                NODE* xor_node = new NODE(NodeType::INTERNAL, GateType::XOR, "xor" + std::to_string(i));
                 assert(name2node.find(xor_node->name) == name2node.end());
                 name2node[xor_node->name] = xor_node;
-                ENCY_Ary.push_back(xor_node);
-                xor_node->insertFI(enc_node);
-                xor_node->insertFI(key_node);
-                NODE* not_node = new NODE(Type::INTERNAL, FType::NOT, "not" + std::to_string(i));
-                ENCY_Ary.push_back(not_node);
-                not_node->insertFI(xor_node);
-                xor_node->insertFO(not_node);
+                encrypted_nodes.push_back(xor_node);
+                xor_node->insert_fan_in(enc_node);
+                xor_node->insert_fan_in(key_node);
+                NODE* not_node = new NODE(NodeType::INTERNAL, GateType::NOT, "not" + std::to_string(i));
+                encrypted_nodes.push_back(not_node);
+                not_node->insert_fan_in(xor_node);
+                xor_node->insert_fan_out(not_node);
                 enc_node->enc = true;
                 // if we are operating on the output node
-                if (enc_node->t == Type::PRIMARY_OUTPUT) {
+                if (enc_node->type == NodeType::PRIMARY_OUTPUT) {
                     // change encoded node
-                    enc_node->t = Type::INTERNAL;
-                    not_node->t = Type::PRIMARY_OUTPUT;
+                    enc_node->type = NodeType::INTERNAL;
+                    not_node->type = NodeType::PRIMARY_OUTPUT;
                     not_node->name = enc_node->name;
                     // ptw = plaintext wire
                     enc_node->name = enc_node->name + "$ptw";
                     assert(name2node.find(enc_node->name) == name2node.end());
                     name2node[not_node->name] = not_node;
                     name2node[enc_node->name] = enc_node;
-                    *std::find(PO_Ary.begin(), PO_Ary.end(), enc_node) = not_node;
+                    *std::find(primary_outputs.begin(), primary_outputs.end(), enc_node) = not_node;
                 } else { // none output node
                     assert(name2node.find(not_node->name) == name2node.end());
                     name2node[not_node->name] = not_node;
-                    for (auto fan_out_node : enc_node->getFO()) {
-                        fan_out_node->insertFI(not_node);
-                        fan_out_node->eraseFI(enc_node);
-                        not_node->insertFO(fan_out_node);
+                    for (auto fan_out_node : enc_node->get_fan_outs()) {
+                        fan_out_node->insert_fan_in(not_node);
+                        fan_out_node->erase_fan_in(enc_node);
+                        not_node->insert_fan_out(fan_out_node);
                     }
-                    enc_node->clearFO();
+                    enc_node->clear_fan_outs();
                 }
-                enc_node->insertFO(xor_node);
-                key_node->insertFO(xor_node);
+                enc_node->insert_fan_out(xor_node);
+                key_node->insert_fan_out(xor_node);
             }
         }
     }
@@ -437,50 +437,50 @@ void encryption::masking()
     // with type nand, nor, not , and, or in testbenchs
     int current_key_counter = this->total_key_num - 1;
     assert(current_key_counter >= 0); // should at least insert a key before
-    for (auto node : PO_Ary) { // masking the output node
+    for (auto node : primary_outputs) { // masking the output node
         if (!node->enc) {
             node->enc = true;
             current_key_counter++;
-            NODE* key_node = new NODE(Type::PRIMARY_INPUT, FType::BUF, "keyinput" + std::to_string(current_key_counter));
+            NODE* key_node = new NODE(NodeType::PRIMARY_INPUT, GateType::BUF, "keyinput" + std::to_string(current_key_counter));
             assert(name2node.find(key_node->name) == name2node.end());
-            KEY_Ary.push_back(key_node);
+            key_inputs.push_back(key_node);
             name2node[key_node->name] = key_node;
-            switch (node->ft) {
-            case (FType::AND): {
+            switch (node->gate) {
+            case (GateType::AND): {
                 key += "1";
-                node->insertFI(key_node);
-                key_node->insertFO(node);
+                node->insert_fan_in(key_node);
+                key_node->insert_fan_out(node);
                 break;
             }
-            case (FType::OR): {
+            case (GateType::OR): {
                 key += "0";
-                node->insertFI(key_node);
-                key_node->insertFO(node);
+                node->insert_fan_in(key_node);
+                key_node->insert_fan_out(node);
                 break;
             }
-            case (FType::NAND): {
+            case (GateType::NAND): {
                 key += "1";
-                node->insertFI(key_node);
-                key_node->insertFO(node);
+                node->insert_fan_in(key_node);
+                key_node->insert_fan_out(node);
                 break;
             }
-            case (FType::NOR): {
+            case (GateType::NOR): {
                 key += "0";
-                node->insertFI(key_node);
-                key_node->insertFO(node);
+                node->insert_fan_in(key_node);
+                key_node->insert_fan_out(node);
                 break;
             }
-            case (FType::NOT): {
+            case (GateType::NOT): {
                 // determine which output should we use
                 // not -> nxor (0, original input) or xor(1, original input)
-                node->insertFI(key_node);
-                key_node->insertFO(node);
+                node->insert_fan_in(key_node);
+                key_node->insert_fan_out(node);
                 if (static_cast<int>(node->NoO0 * node->NoP0) > static_cast<int>(node->NoO1 * node->NoP1)) {
                     key += "0";
-                    node->ft = FType::XNOR;
+                    node->gate = GateType::XNOR;
                 } else {
                     key += "1";
-                    node->ft = FType::XOR;
+                    node->gate = GateType::XOR;
                 }
                 break;
             }
@@ -522,48 +522,48 @@ void encryption::readfile(std::string _filename)
             std::string name = "";
             name.assign(buffer, 6, buffer.size() - 7);
 
-            Type t = Type::PRIMARY_INPUT;
-            FType ft = FType::BUF;
+            NodeType type = NodeType::PRIMARY_INPUT;
+            GateType gate = GateType::BUF;
 
             NODE* n;
             auto it = name2node.find(name);
             if (it == name2node.end()) {
-                n = new NODE(t, ft, name);
+                n = new NODE(type, gate, name);
                 n->id = count++; // set ID
                 n->depth = 0; // set depth
-                NODE_Ary.push_back(n);
+                nodes.push_back(n);
                 name2node[name] = n;
             } else {
                 n = it->second;
-                n->ft = ft;
-                n->t = t;
+                n->gate = gate;
+                n->type = type;
             }
             // Input push in
-            PI_Ary.push_back(n);
+            primary_inputs.push_back(n);
         } else if (checkerflag == "OU") {
             std::string name = "";
             name.assign(buffer, 7, buffer.size() - 8);
 
-            Type t = Type::PRIMARY_OUTPUT;
-            FType ft = FType::BUF;
+            NodeType type = NodeType::PRIMARY_OUTPUT;
+            GateType gate = GateType::BUF;
 
             NODE* n;
             auto it = name2node.find(name);
             if (it == name2node.end()) {
-                n = new NODE(t, ft, name);
+                n = new NODE(type, gate, name);
                 n->id = count++; // set ID
-                NODE_Ary.push_back(n);
+                nodes.push_back(n);
                 name2node[name] = n;
             } else {
                 n = it->second;
-                if (it->second->t != Type::PRIMARY_INPUT)
-                    n->t = t;
+                if (it->second->type != NodeType::PRIMARY_INPUT)
+                    n->type = type;
             }
             // push in
-            PO_Ary.push_back(n);
+            primary_outputs.push_back(n);
         } else {
-            Type t = Type::INTERNAL; // set type
-            FType ft;
+            NodeType type = NodeType::INTERNAL; // set type
+            GateType gate;
 
             std::string tem_buf = "";
             std::stringstream ss;
@@ -575,28 +575,28 @@ void encryption::readfile(std::string _filename)
             // = kill
             ss >> tem_buf >> std::ws;
 
-            // get Ftype
+            // get gate type
             std::string ft_name = "";
             std::getline(ss, ft_name, '(');
             ss >> tem_buf;
 
             std::transform(ft_name.begin(), ft_name.end(), ft_name.begin(), tolower);
             if (ft_name == "not") {
-                ft = FType::NOT;
+                gate = GateType::NOT;
             } else if (ft_name == "buf") {
-                ft = FType::BUF;
+                gate = GateType::BUF;
             } else if (ft_name == "and") {
-                ft = FType::AND;
+                gate = GateType::AND;
             } else if (ft_name == "xor") {
-                ft = FType::XOR;
+                gate = GateType::XOR;
             } else if (ft_name == "xnor") {
-                ft = FType::XNOR;
+                gate = GateType::XNOR;
             } else if (ft_name == "nand") {
-                ft = FType::NAND;
+                gate = GateType::NAND;
             } else if (ft_name == "nor") {
-                ft = FType::NOR;
+                gate = GateType::NOR;
             } else if (ft_name == "or") {
-                ft = FType::OR;
+                gate = GateType::OR;
             } else {
                 continue;
             }
@@ -605,14 +605,14 @@ void encryption::readfile(std::string _filename)
             auto it = name2node.find(name);
             NODE* n;
             if (it == name2node.end()) {
-                n = new NODE(t, ft, name);
+                n = new NODE(type, gate, name);
                 n->id = count++; // set ID
-                NODE_Ary.push_back(n);
+                nodes.push_back(n);
                 name2node[name] = n;
             } else {
                 n = it->second;
-                assert(n->ft == FType::BUF);
-                n->ft = ft;
+                assert(n->gate == GateType::BUF);
+                n->gate = gate;
             }
 
             do {
@@ -629,17 +629,15 @@ void encryption::readfile(std::string _filename)
                 NODE* tem_n;
                 it = name2node.find(tem_buf);
                 if (it == name2node.end()) {
-                    tem_n = new NODE(t, FType::BUF, tem_buf);
+                    tem_n = new NODE(type, GateType::BUF, tem_buf);
                     tem_n->id = count++; // set ID
-                    NODE_Ary.push_back(tem_n);
+                    nodes.push_back(tem_n);
                     name2node[tem_buf] = tem_n;
                 } else {
                     tem_n = it->second;
                 }
-                // fan out
-                tem_n->insertFO(n);
-                // fan in
-                n->insertFI(tem_n);
+                tem_n->insert_fan_out(n);
+                n->insert_fan_in(tem_n);
             } while (ss >> tem_buf);
         }
     }
@@ -650,15 +648,15 @@ std::ostream& operator<<(std::ostream& os, NODE* p)
 {
     os << "-------------------------------------------------------\n";
     os << "name: " << p->name << std::endl;
-    os << "Gate type: " << p->ft << std::endl;
-    os << "Type: " << p->t << std::endl;
+    os << "Gate type: " << p->gate << std::endl;
+    os << "Type: " << p->type << std::endl;
     os << "ID: " << p->id << std::endl;
-    os << "FI node :";
-    for (auto q : p->getFI()) {
+    os << "Fan-in node :";
+    for (auto q : p->get_fan_ins()) {
         os << " " << q->name;
     }
-    os << "\nFO node :";
-    for (auto q : p->getFO()) {
+    os << "\nFan-out node :";
+    for (auto q : p->get_fan_outs()) {
         os << " " << q->name;
     }
     os << "\ndepth " << p->depth << std::endl;
@@ -677,20 +675,20 @@ std::ostream& operator<<(std::ostream& os, NODE* p)
 void encryption::topological_sort()
 {
 
-    visited.resize(NODE_Ary.size());
-    in_degree.resize(NODE_Ary.size());
+    visited.resize(nodes.size());
+    in_degree.resize(nodes.size());
     std::fill(visited.begin(), visited.end(), 0);
     std::fill(in_degree.begin(), in_degree.end(), 0);
 
-    for (auto p : NODE_Ary) {
-        for (auto q : p->getFO()) {
+    for (auto p : nodes) {
+        for (auto q : p->get_fan_outs()) {
             in_degree[q->id]++;
         }
     }
 
     std::queue<NODE*> q;
 
-    for (auto p : NODE_Ary) {
+    for (auto p : nodes) {
         if (in_degree[p->id] == 0) {
             q.push(p);
             p->depth = 0;
@@ -704,7 +702,7 @@ void encryption::topological_sort()
         q.pop();
         if (node->depth == -0xfffffff) {
             int depth = -1;
-            for (auto children : node->getFI()) {
+            for (auto children : node->get_fan_ins()) {
                 depth = std::max(depth, children->depth);
             }
             node->depth = depth + 1;
@@ -713,7 +711,7 @@ void encryption::topological_sort()
 
         // Decrease indegree of adjacent vertices as the
         // current node is in topological order
-        for (auto it : node->getFO()) {
+        for (auto it : node->get_fan_outs()) {
             in_degree[it->id]--;
 
             // If indegree becomes 0, push it to the queue
@@ -723,13 +721,13 @@ void encryption::topological_sort()
     }
 
     // Check for cycle
-    assert(result.size() == NODE_Ary.size());
-    NODE_Ary = std::move(result);
+    assert(result.size() == nodes.size());
+    nodes = std::move(result);
 
     if (this->is_debug) {
-        for (auto it : NODE_Ary) {
+        for (auto it : nodes) {
             std::cout << "name : " << it->name << " depth : " << it->depth << std::endl;
-            for (auto child : it->getFI()) {
+            for (auto child : it->get_fan_ins()) {
                 std::cout << "child : " << child->name << " depth : " << child->depth << std::endl;
             }
         }
@@ -753,7 +751,7 @@ void encryption::outputfile()
 
     out << "# key=" << key << std::endl;
     // INPUT
-    for (auto p : PI_Ary) {
+    for (auto p : primary_inputs) {
         std::string tem = "INPUT(";
         tem += p->name;
         tem += ")";
@@ -761,7 +759,7 @@ void encryption::outputfile()
     }
 
     // OUTPUT
-    for (auto p : PO_Ary) {
+    for (auto p : primary_outputs) {
         std::string tem = "OUTPUT(";
         tem += p->name;
         tem += ")";
@@ -769,7 +767,7 @@ void encryption::outputfile()
     }
 
     // OUTkey
-    for (auto p : KEY_Ary) {
+    for (auto p : key_inputs) {
         std::string tem = "INPUT(";
         tem += p->name;
         tem += ")";
@@ -777,17 +775,17 @@ void encryption::outputfile()
     }
 
     // original circuit
-    for (auto p : NODE_Ary) {
+    for (auto p : nodes) {
         std::string tem = "";
-        if (p->t == Type::INTERNAL || p->t == Type::PRIMARY_OUTPUT) {
+        if (p->type == NodeType::INTERNAL || p->type == NodeType::PRIMARY_OUTPUT) {
             tem = p->name;
             tem += " = ";
-            tem += p->stringFType();
+            tem += p->gate_as_string();
             tem += "(";
 
-            for (size_t i = 0; i < p->getFI().size(); i++) {
-                tem += p->getFI()[i]->name;
-                if (i + 1 == p->getFI().size()) {
+            for (size_t i = 0; i < p->get_fan_ins().size(); i++) {
+                tem += p->get_fan_ins()[i]->name;
+                if (i + 1 == p->get_fan_ins().size()) {
                     tem += ")";
                 } else
                     tem += ", ";
@@ -796,16 +794,16 @@ void encryption::outputfile()
         }
     }
     // encry circuit
-    for (auto p : ENCY_Ary) {
+    for (auto p : encrypted_nodes) {
         std::string tem = "";
         tem = p->name;
         tem += " = ";
-        tem += p->stringFType();
+        tem += p->gate_as_string();
         tem += "(";
 
-        for (size_t i = 0; i < p->getFI().size(); i++) {
-            tem += p->getFI()[i]->name;
-            if (i + 1 == p->getFI().size()) {
+        for (size_t i = 0; i < p->get_fan_ins().size(); i++) {
+            tem += p->get_fan_ins()[i]->name;
+            if (i + 1 == p->get_fan_ins().size()) {
                 tem += ")";
             } else
                 tem += ", ";
