@@ -12,8 +12,6 @@ public:
     ~encryption();
 
     // operator
-    const std::string& getKey() const { return key; }
-    int getKeylen() const { return KEY_Ary.size(); }
     void insertNODE(NODE* _node) { NODE_Ary.push_back(_node); }
     void insertPI(NODE* _node) { PI_Ary.push_back(_node); }
     void insertPO(NODE* _node) { PO_Ary.push_back(_node); }
