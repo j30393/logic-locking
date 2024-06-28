@@ -57,7 +57,6 @@ void encryption::xor_encryption()
     std::vector<NODE*> enc_nodes = getRandomKNodes(NODE_Ary, total_enc_num);
     total_enc_num = std::min(total_enc_num, static_cast<int>(enc_nodes.size()));
     assert(total_enc_num > 0);
-    this->total_key_num = total_enc_num;
     if (is_debug) {
         std::cout << "encryption a total of " << total_enc_num << " nodes" << std::endl;
     }

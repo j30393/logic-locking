@@ -12,8 +12,6 @@ public:
     ~encryption();
 
     // operator
-    const std::string& getKey() const { return key; }
-    int getKeylen() const { return KEY_Ary.size(); }
     void insertNODE(NODE* _node) { NODE_Ary.push_back(_node); }
     void insertPI(NODE* _node) { PI_Ary.push_back(_node); }
     void insertPO(NODE* _node) { PO_Ary.push_back(_node); }
@@ -23,10 +21,8 @@ public:
     void outputfile();
     void setOutputname(std::string _name);
     void setDebugMode(bool _debug) { is_debug = _debug; }
-    void fault_impact_cal();
     float key_ratio;
     void xor_encryption();
-    int total_key_num;
 
 private:
     std::vector<NODE*> NODE_Ary;

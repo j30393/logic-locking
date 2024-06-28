@@ -65,19 +65,7 @@ public:
     {
         return name == _A->name && ft == _A->ft;
     }
-    bool operator==(std::string _name)
-    {
-        return name == _name;
-    }
 
-    bool operator>(NODE* _A)
-    {
-        return name > _A->name;
-    }
-    bool operator<(NODE* _A)
-    {
-        return name < _A->name;
-    }
     friend std::ostream& operator<<(std::ostream& os, NODE* p);
 
     Type t;
