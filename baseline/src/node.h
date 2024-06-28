@@ -56,30 +56,12 @@ public:
     {
     }
 
-    NODE* operator=(NODE* _n)
-    {
-        NODE* tem_n;
-        tem_n = _n;
-        return tem_n;
-    }
     // operator overloading
     bool operator==(NODE* _A)
     {
         return (name == _A->name && ft == _A->ft);
     }
-    bool operator==(std::string _name)
-    {
-        return name == _name;
-    }
 
-    bool operator>(NODE* _A)
-    {
-        return name > _A->name;
-    }
-    bool operator<(NODE* _A)
-    {
-        return name < _A->name;
-    }
     friend std::ostream& operator<<(std::ostream& os, NODE* p);
 
     Type t;

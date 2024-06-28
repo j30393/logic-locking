@@ -600,26 +600,6 @@ void encryption::sl_one_encryption()
     }
 }
 
-void encryption::erasePI(NODE* _node)
-{
-    for (auto it = PI_Ary.begin(); it != PI_Ary.end(); it++) {
-        if (*it == _node) {
-            PI_Ary.erase(it);
-            break;
-        }
-    }
-}
-
-void encryption::erasePO(NODE* _node)
-{
-    for (auto it = PO_Ary.begin(); it != PO_Ary.end(); it++) {
-        if (*it == _node) {
-            PO_Ary.erase(it);
-            break;
-        }
-    }
-}
-
 void encryption::setOutputname(std::string _name)
 {
     twolevelfile = true;
