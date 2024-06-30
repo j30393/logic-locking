@@ -1,1 +1,2 @@
-# logic-locking
+# Overall introduction
+There are three logic locking implementations: Random logic locking, Fault analysis-based logic locking, and Strong logic locking. You can refer to these implementations in their respective branches. Additionally, a draft of the flowchart is available in the Report.pdf.
